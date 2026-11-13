@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#2a1458" />
+  <title>Pack It All</title>
+  <link rel="icon" href="icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Pack It All" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <canvas id="gl"></canvas>
+
+  <!-- ===== Loading ===== -->
+  <div id="loading"><div class="logo big"><span>PACK</span><span>IT ALL</span></div><div class="spinner"></div></div>
+
+  <!-- ===== Top bar (menus) ===== -->
+  <header id="topbar" class="hidden">
+    <div class="logo"><span>PACK</span><span>IT ALL</span></div>
+    <div class="pill" id="pill-hearts"><i data-i="heart"></i><b id="hearts-n">5</b><small id="hearts-t"></small></div>
+    <div class="pill" id="pill-coins"><i data-i="coin"></i><b id="coins-n">0</b><button class="plus" data-go="shop"><i data-i="plus"></i></button></div>
+    <div class="pill" id="pill-gems"><i data-i="gem"></i><b id="gems-n">0</b></div>
+    <button class="round-btn" id="btn-settings"><i data-i="gear"></i></button>
+  </header>
+
+  <!-- ===== Tabs ===== -->
+  <main id="tabs" class="hidden">
+    <section class="tab" id="tab-play">
+      <div class="map-scroll" id="map"></div>
+      <div class="play-cta">
+        <div class="play-theme" id="play-theme"></div>
+        <button class="btn btn-big btn-green" id="btn-play"></button>
+      </div>
+    </section>
+
+    <section class="tab" id="tab-city">
+      <div class="city-hud">
+        <div class="chip"><i data-i="coin"></i><b id="city-income">0</b><small id="city-perhour"></small></div>
+        <div class="chip"><i data-i="people"></i><b id="city-pop">0</b></div>
+        <div class="chip lvl"><small id="city-lvl-l"></small><b id="city-lvl">1</b></div>
+      </div>
+      <button class="btn btn-yellow collect-all" id="btn-collect"></button>
+    </section>
+
+    <section class="tab scroll" id="tab-tasks"><div class="panel-wrap" id="tasks-list"></div></section>
+    <section class="tab scroll" id="tab-shop"><div class="panel-wrap" id="shop-list"></div></section>
+  </main>
+
+  <!-- ===== Bottom navigation ===== -->
+  <nav id="nav" class="hidden">
+    <button data-tab="play"><i data-i="play"></i><span data-t="play"></span></button>
+    <button data-tab="city"><i data-i="city"></i><span data-t="city"></span></button>
+    <button data-tab="tasks"><i data-i="tasks"></i><span data-t="tasks"></span><em class="nbadge" id="tasks-badge"></em></button>
+    <button data-tab="shop"><i data-i="shop"></i><span data-t="shop"></span></button>
+  </nav>
+
+  <!-- ===== In-game HUD ===== -->
+  <div id="game-hud" class="hidden">
+    <div class="g-top">
+      <div class="g-row">
+        <div class="pill small"><span id="lvl-label"></span></div>
+        <div class="pill small"><i data-i="coin"></i><b id="run-coins">0</b></div>
+        <button class="round-btn" id="btn-pause"><i data-i="pause"></i></button>
+      </div>
+      <div class="g-row">
+        <div class="goals" id="goals"></div>
+        <div class="timer" id="timer"><i data-i="clock"></i><b id="timer-txt">2:00</b></div>
+      </div>
+      <div class="size-bar"><div id="size-fill"></div></div>
+    </div>
+    <div class="boosters">
+      <button class="boost" data-b="magnet"><i data-i="magnet"></i><span class="badge">0</span></button>
+      <button class="boost" data-b="tornado"><i data-i="tornado"></i><span class="badge">0</span></button>
+      <button class="boost" data-b="freeze"><i data-i="freeze"></i><span class="badge">0</span></button>
+      <button class="boost" data-b="grow"><i data-i="grow"></i><span class="badge">0</span></button>
+    </div>
+    <div id="joy"><div id="joy-knob"></div></div>
+    <div id="floaters"></div>
+    <div id="intro"></div>
+    <div id="freeze-overlay"></div>
+  </div>
+
+  <div id="modal" class="hidden"><div class="modal-card" id="modal-card"></div></div>
+  <div id="toast"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

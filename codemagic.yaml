@@ -1,0 +1,66 @@
+# Codemagic builds and uploads the app WITHOUT needing your own Mac.
+# 1) Push this project to GitHub/GitLab/Bitbucket  2) Connect it at codemagic.io
+# 3) In Codemagic: Team settings > Integrations > App Store Connect: add an API key named "codemagic"
+#    Code signing identities > Android keystores: upload your keystore with reference name "packitall_keystore"
+workflows:
+  ios-release:
+    name: iOS → TestFlight / App Store
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: codemagic
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.packitall.game
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Copy game into iOS project
+        script: npx cap sync ios
+      - name: Use signing profiles
+        script: xcode-project use-profiles
+      - name: Set build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+      - name: Build IPA
+        script: xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android-release:
+    name: Android → AAB for Google Play
+    max_build_duration: 40
+    instance_type: linux_x2
+    environment:
+      android_signing:
+        - packitall_keystore
+      node: 22
+      java: 21
+    scripts:
+      - name: Install dependencies
+        script: npm install
+      - name: Copy game into Android project
+        script: npx cap sync android
+      - name: Signing properties
+        script: |
+          cat > android/keystore.properties <<PROPS
+          storeFile=$CM_KEYSTORE_PATH
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          keyPassword=$CM_KEY_PASSWORD
+          PROPS
+      - name: Build AAB
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease -PversionCode=$BUILD_NUMBER
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab

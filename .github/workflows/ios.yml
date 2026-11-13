@@ -1,0 +1,23 @@
+name: iOS build check
+
+# Compiles the iOS app on a GitHub Mac (no signing) so you know the project builds.
+# To publish to the App Store use Xcode on a Mac, or codemagic.yaml (no Mac needed).
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx cap sync ios
+      - name: Build for simulator (unsigned)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App \
+            -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build
