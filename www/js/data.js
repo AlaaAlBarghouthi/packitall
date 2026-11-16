@@ -100,6 +100,9 @@ export const BOOSTERS = {
   grow:    { price: 200, icon: 'grow' },
 };
 
+export const PRE_BOOSTERS = { bolt: { price: 180, icon: '⚡' }, hourglass: { price: 150, icon: '⏳' } };
+export const STREAK_MAX = 3;
+
 export const MAX_HEARTS = 5;
 export const HEART_REGEN_MS = 20 * 60 * 1000;
 export const REFILL_GEMS = 30;

@@ -4,7 +4,7 @@ import { I } from './icons.js';
 import { t, setLang, getLang, fmt, fmtDuration } from './i18n.js';
 import * as St from './state.js';
 import { S } from './state.js';
-import { MATS, MAT_ORDER, matCost, PERKS, LOGIN_REWARDS, GIFT_COOLDOWN_MS } from './data.js';
+import { MATS, MAT_ORDER, matCost, PERKS, LOGIN_REWARDS, GIFT_COOLDOWN_MS, PRE_BOOSTERS, STREAK_MAX } from './data.js';
 const giftCooldown = () => Math.max(3600000, GIFT_COOLDOWN_MS - St.perks().giftH * 3600000);
 import { BUILDINGS, BUILDING_ORDER, BOOSTERS, REFILL_GEMS, EXTRA_TIME_GEMS,
   PLOT_UNLOCK, MAX_BUILDING_LEVEL, upgradeCost, incomeOf } from './data.js';
@@ -124,7 +124,7 @@ function renderMap() {
   const bn = $('#xmas-banner');
   if (xmasActive()) { const days = Math.max(1, Math.ceil((xmasEndsAt() - Date.now()) / 86400000)); bn.innerHTML = `<b>🎄 ${t('xmasTitle')}</b><span>${t('xmasBanner')}</span><small>${t('xmasEnds', { n: days })}</small>`; bn.classList.remove('hidden'); }
   else bn.classList.add('hidden');
-  $('#btn-play').innerHTML = `${t('level')} ${cur}`;
+  $('#btn-play').innerHTML = `${t('level')} ${cur}${S.streak ? ` <small class="streak-chip">🎒${S.streak}</small>` : ''}`;
 }
 
 function renderCityHud() {
@@ -221,6 +221,11 @@ function renderShop() {
         <button class="btn btn-yellow" data-buy="${k}" ${S.coins >= BOOSTERS[k].price ? '' : 'disabled'}><i data-i="coin"></i>${fmt(BOOSTERS[k].price)}</button>
       </div>`).join('')}
     </div>
+    <div class="sec-title">${t('selectBooster')}</div>
+    <div class="shop-grid">${Object.keys(PRE_BOOSTERS).map((k) => `
+      <div class="card shop-item"><div class="ico" style="font-size:34px">${PRE_BOOSTERS[k].icon}</div><b>${t('pre_' + k)}</b><p>${t('pre_' + k + 'D')}</p>
+        <div class="own">× ${S.pre[k] || 0}</div>
+        <button class="btn btn-yellow" data-buypre="${k}" ${S.coins >= PRE_BOOSTERS[k].price ? '' : 'disabled'}><i data-i="coin"></i>${fmt(PRE_BOOSTERS[k].price)}</button></div>`).join('')}</div>
     <div class="sec-title">${t('hearts')}</div>
     <div class="card row">
       <i data-i="heart" style="width:50px;height:50px"></i>
@@ -241,6 +246,7 @@ function renderShop() {
   const ag = $('#btn-adgift'); if (ag) ag.onclick = () => watchAd('gift', ag, () => { S.giftTs = 0; S.coins += 100; S.gems += 2; S.giftTs = Date.now(); St.save(); sfx.win(); renderShop(); });
   const abo = $('#btn-adboost'); if (abo) abo.onclick = () => watchAd('freeboost', abo, () => { const ks = Object.keys(BOOSTERS); const k = ks[Math.floor(Math.random() * ks.length)]; S.boosters[k] = (S.boosters[k] || 0) + 1; St.save(); sfx.coin(); toast('+1 ' + t(k)); renderShop(); });
   el.querySelectorAll('[data-skin]').forEach((b) => b.onclick = () => { S.skin = b.dataset.skin; St.save(); sfx.click(); renderShop(); });
+  el.querySelectorAll('[data-buypre]').forEach((b) => b.onclick = () => { const k = b.dataset.buypre; if (St.spendCoins(PRE_BOOSTERS[k].price)) { S.pre[k] = (S.pre[k] || 0) + 1; St.save(); sfx.coin(); renderShop(); } });
   const g = $('#btn-gift'); if (g && giftReady) g.onclick = () => { S.giftTs = Date.now(); S.coins += 100; S.gems += 2; St.save(); sfx.win(); renderShop(); };
   $('#btn-refill').onclick = () => { if (St.spendGems(REFILL_GEMS)) { St.refillHearts(); sfx.goal(); renderShop(); } };
   $('#btn-exchange').onclick = () => { if (St.spendGems(10)) { St.addCoins(500); sfx.coin(); renderShop(); } };
@@ -306,7 +312,47 @@ function onCoinTap(i) {
 }
 
 // ---------------------------------------------------------------- level flow
-function startLevel() {
+// ---------------------------------------------------------------- pre-level screen (win-streak bag + boosters)
+function preLevel() {
+  unlockAudio();
+  St.tickHearts();
+  if (S.hearts <= 0) return noHearts();
+  if (!S.tut.move && S.level === 1) return startLevel();
+  sfx.click();
+  const sel = { bolt: false, hourglass: false };
+  const th = (xmasActive() && S.level > 1 && S.level % 2 === 0) ? 'xmas' : THEMES[(S.level - 1) % THEMES.length].id;
+  const st = S.streak || 0;
+  const slots = [1, 2, 3].map((k) => `<div class="sk ${k <= st ? 'on' : ''}"><span>⚡${k}</span><span>⏳${k}</span></div>`).join('');
+  const card = modal(`<div class="pl-title">${t('level')} ${S.level}</div><div class="pl-theme">${t('theme_' + th)}</div>
+    <div class="bag">
+      <div class="bag-ico">🎒</div>
+      <div class="bag-body"><b>${t('streakBag')}</b>
+        <div class="bag-bar"><div style="width:${st / STREAK_MAX * 100}%"></div><span>${st}/${STREAK_MAX}</span></div>
+        <small>${st ? t('streakHave', { n: st }) : t('streakHint')}</small></div>
+    </div>
+    <div class="streak-steps">${slots}</div>
+    <h3 class="pl-sel">${t('selectBooster')}</h3>
+    <div class="pre-row">${Object.keys(PRE_BOOSTERS).map((k) => `<button class="pre-b" data-pre="${k}"><span class="pre-ico">${PRE_BOOSTERS[k].icon}</span><em class="badge">${S.pre[k] > 0 ? S.pre[k] : '+'}</em><small>${t('pre_' + k)}</small></button>`).join('')}</div>
+    <div class="actions"><button class="btn btn-green btn-big" id="pl-go">${t('play')}</button>
+      <button class="btn btn-gray" id="pl-x" style="min-height:40px">${t('close')}</button></div>`);
+  card.querySelectorAll('[data-pre]').forEach((b) => b.onclick = () => {
+    const k = b.dataset.pre;
+    if ((S.pre[k] || 0) <= 0) {
+      if (St.spendCoins(PRE_BOOSTERS[k].price)) { S.pre[k] = 1; St.save(); sfx.coin(); b.querySelector('.badge').textContent = '1'; toast('+1 ' + PRE_BOOSTERS[k].icon); }
+      else { sfx.error(); toast(t('notEnough') + ' (' + PRE_BOOSTERS[k].price + ' 🪙)'); }
+      return;
+    }
+    sel[k] = !sel[k]; b.classList.toggle('on', sel[k]); sfx.click();
+  });
+  card.querySelector('#pl-x').onclick = () => { sfx.click(); closeModal(); };
+  card.querySelector('#pl-go').onclick = () => {
+    for (const k in sel) if (sel[k]) S.pre[k]--;
+    St.save(); closeModal(true);
+    startLevel({ startGrow: st + (sel.bolt ? 1 : 0), startTime: st + (sel.hourglass ? 1 : 0) });
+  };
+}
+
+function startLevel(pre = {}) {
   unlockAudio();
   St.tickHearts();
   if (S.hearts <= 0) return noHearts();
@@ -316,7 +362,7 @@ function startLevel() {
   ['#topbar', '#tabs', '#nav'].forEach((s) => $(s).classList.add('hidden'));
   $('#game-hud').classList.remove('hidden');
   city.active = false;
-  game.start(S.level, S.boosters, St.perks(), { tutorial: !S.tut.move && S.level === 1, xmas: xmasActive(), skin: S.skin });
+  game.start(S.level, S.boosters, St.perks(), { tutorial: !S.tut.move && S.level === 1, xmas: xmasActive(), skin: S.skin, startGrow: pre.startGrow || 0, startTime: pre.startTime || 0 });
   if (game.level.hazards && !S.tut.bomb) {
     game.paused = true; $('#intro').classList.remove('show');
     const card = modal(`<div class="bomb-hint"><img src="${modelIcon('bomb')}"><span class="no-sign">⚠️</span></div>
@@ -377,6 +423,8 @@ function commitRun(win, res) {
   if (game.gemsRun) S.gems += game.gemsRun;
   game.swallowed = 0; game.coinsEarned = 0; game.matsRun = {}; game.gemsRun = 0;
   let gem = 0;
+  const hadStreak = S.streak || 0;
+  S.streak = win ? Math.min(STREAK_MAX, hadStreak + 1) : 0;
   if (win) {
     S.stats.levels++; St.progressTask('levels', 1);
     S.stars[res.level] = Math.max(S.stars[res.level] || 0, res.stars);
@@ -385,7 +433,7 @@ function commitRun(win, res) {
     if (Math.random() * 100 < P.gemPct) { S.gems += 1; gem = 1; }
   }
   St.save();
-  return { coins, itemCoins, tb, mats, gem };
+  return { coins, itemCoins, tb, mats, gem, hadStreak };
 }
 
 function onEnd(res) {
@@ -405,7 +453,9 @@ function onEnd(res) {
         <div class="total"><span>${t('earned')}</span><b>${fmt(total)}<i data-i="coin"></i></b></div>
       </div>
       <div class="mrow" style="justify-content:center">${gainChips(cr.mats)}</div>
+      ${cr.hadStreak ? `<div class="bag-mini lost">🎒 ${t('streakLost')}</div>` : ''}
       ${cr.gem ? `<p>💎 ${t('gemBonus')}</p>` : ''}
+      <div class="bag-mini">🎒 ${t('streakBag')} <b>${S.streak}/${STREAK_MAX}</b> · ⚡${S.streak} ⏳${S.streak}</div>
       ${newBld.length ? `<p>🔓 ${newBld.map((k) => t('bld_' + k)).join('، ')}</p>` : ''}
       ${unlockedPlots ? `<p>🔓 ${t('emptyPlot')} +${unlockedPlots}</p>` : ''}
       ${adBtn('double', t('adDouble') + ' +' + fmt(total), 'm-addouble')}
@@ -413,7 +463,7 @@ function onEnd(res) {
         <button class="btn btn-yellow" id="m-city"><i data-i="city"></i>${t('city')}</button>
         <button class="btn btn-green" id="m-next">${t('next')}</button>
       </div>`, false);
-    card.querySelector('#m-next').onclick = () => { closeModal(true); startLevel(); };
+    card.querySelector('#m-next').onclick = () => { closeModal(true); preLevel(); };
     card.querySelector('#m-city').onclick = () => { sfx.click(); closeModal(true); backToMenu('city'); };
     const ad2 = card.querySelector('#m-addouble');
     if (ad2) ad2.onclick = () => watchAd('double', ad2, () => {
@@ -458,7 +508,7 @@ function onEnd(res) {
         <button class="btn btn-gray" id="m-home">${t('home')}</button>
         <button class="btn btn-green" id="m-retry">${t('retry')}</button></div>`, false);
     card.querySelector('#m-home').onclick = () => { sfx.click(); closeModal(true); backToMenu('play'); };
-    card.querySelector('#m-retry').onclick = () => { closeModal(true); startLevel(); };
+    card.querySelector('#m-retry').onclick = () => { closeModal(true); preLevel(); };
   }
 }
 
@@ -571,7 +621,7 @@ async function boot() {
   // wiring
   $$('#nav button').forEach((b) => b.onclick = () => { unlockAudio(); sfx.click(); showTab(b.dataset.tab); });
   $$('[data-go]').forEach((b) => b.onclick = () => { sfx.click(); showTab(b.dataset.go); });
-  $('#btn-play').onclick = startLevel;
+  $('#btn-play').onclick = preLevel;
   $('#btn-settings').onclick = openSettings;
   $('#btn-bonuses').onclick = openBonuses;
   $('#btn-pause').onclick = pauseGame;

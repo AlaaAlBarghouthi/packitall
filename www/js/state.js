@@ -22,6 +22,7 @@ function fresh() {
     tutorial: true,
     mats: { gift: 0, sweet: 0, toy: 0, nature: 0, city: 0, festive: 0 },
     skin: 'classic', skins: ['classic'], xmasGift: '',
+    streak: 0, pre: { bolt: 2, hourglass: 2 },
     login: { last: '', streak: 0 },
     toyDay: '',
     tut: { move: false, city: false, bomb: false },
@@ -48,6 +49,7 @@ export async function load() {
       S.login = Object.assign(fresh().login, d.login || {});
       S.tut = Object.assign(fresh().tut, d.tut || {});
       if (!Array.isArray(S.skins)) S.skins = ['classic'];
+      S.pre = Object.assign(fresh().pre, d.pre || {}); S.streak = S.streak || 0;
       while (S.plots.length < PLOT_UNLOCK.length) S.plots.push({ b: null, lv: 0, ts: 0 });
     } catch (e) { S = fresh(); }
   }

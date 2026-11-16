@@ -277,3 +277,26 @@ body.xmas .round-btn::before { top: -5px; left: 18%; right: 18%; height: 9px; }
 .bomb-hint { position: relative; width: 130px; height: 130px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle, #ffe6e9 55%, #ff4e5e 57%, #ff4e5e 63%, transparent 64%); display: grid; place-items: center; animation: pulse .8s infinite; }
 .bomb-hint img { width: 96px; height: 96px; }
 .bomb-hint .no-sign { position: absolute; bottom: -2px; right: 0; font-size: 40px; }
+
+/* ---------- pre-level screen + win streak bag */
+.pl-title { font-size: 34px; font-weight: 800; color: #fff; background: linear-gradient(#b37dff, #7b3fe4); border: 3px solid #3a1580; border-radius: 16px; margin: -6px auto 2px; padding: 0 18px; width: max-content; box-shadow: 0 4px 0 #3a1580; text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.pl-theme { font-weight: 700; color: #8a7aa8; margin-bottom: 8px; }
+.bag { display: flex; align-items: center; gap: 10px; background: #fbf3e4; border: 2px solid #ecdcbf; border-radius: 18px; padding: 10px; text-align: start; }
+.bag-ico { font-size: 52px; line-height: 1; }
+.bag-body { flex: 1; } .bag-body b { font-size: 17px; color: #5a2d00; } .bag-body small { display: block; color: #8a6a4a; font-size: 12.5px; line-height: 1.3; margin-top: 4px; }
+.bag-bar { position: relative; height: 22px; border-radius: 12px; background: #b9875a; border: 2px solid #8a5a2a; overflow: hidden; margin-top: 4px; direction: ltr; }
+.bag-bar div { height: 100%; background: linear-gradient(#6fd3ff, #1f8fe0); }
+.bag-bar span { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 14px; text-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.streak-steps { display: flex; justify-content: center; gap: 6px; margin: 8px 0 2px; direction: ltr; }
+.sk { display: flex; gap: 2px; padding: 3px 8px; border-radius: 10px; background: #eee8f6; color: #a89cbf; font-weight: 800; font-size: 13px; }
+.sk.on { background: #fff3c4; color: #8a5a00; border: 2px solid #ffcb2f; }
+.pl-sel { margin: 10px 0 6px; font-size: 19px; color: #3a1580; }
+.pre-row { display: flex; justify-content: center; gap: 14px; }
+.pre-b { position: relative; width: 92px; padding: 8px 4px 6px; border-radius: 18px; background: linear-gradient(#a56bff, #5b24b8); border: 3px solid #2e0f72; box-shadow: 0 4px 0 #2e0f72; display: flex; flex-direction: column; align-items: center; color: #fff; }
+.pre-b .pre-ico { font-size: 38px; line-height: 1.1; }
+.pre-b small { font-size: 12px; font-weight: 800; }
+.pre-b .badge { position: absolute; top: -8px; right: -8px; min-width: 26px; height: 26px; border-radius: 13px; background: #ff3b4e; border: 3px solid #fff; font-style: normal; font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+.pre-b.on { background: linear-gradient(#6ee883, #2fb24a); border-color: #1a6e2c; box-shadow: 0 0 0 4px #ffd23f, 0 4px 0 #1a6e2c; }
+.bag-mini { margin: 6px auto 0; width: max-content; max-width: 100%; padding: 4px 12px; border-radius: 12px; background: #fff3c4; color: #8a5a00; font-weight: 800; font-size: 14px; border: 2px solid #ffcb2f; }
+.bag-mini.lost { background: #ffe8ec; color: #c4133a; border-color: #ffc2cd; }
+.streak-chip { font-size: 18px; background: rgba(255,255,255,.25); border-radius: 10px; padding: 0 6px; margin-inline-start: 6px; }

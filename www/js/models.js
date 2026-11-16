@@ -506,6 +506,21 @@ export const MODELS = {
     b.add(new THREE.OctahedronGeometry(0.2, 0), '#ff9cff', [0, 0.47, 0.06], [0, 0.4, 0], [1, 1.2, 1]);
     return b;
   },
+  // ---------- streak / pre-level boosters
+  bolt: () => {
+    const b = new B();
+    const sh = new THREE.Shape(); [[-0.12, 0.6], [0.28, 0.6], [0.08, 0.12], [0.34, 0.12], [-0.18, -0.6], [-0.02, -0.08], [-0.3, -0.08]].forEach(([x, y], i) => i ? sh.lineTo(x, y) : sh.moveTo(x, y));
+    const g = new THREE.ExtrudeGeometry(sh, { depth: 0.18, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 2 }); g.translate(0, 0, -0.09);
+    b.add(g, '#ffc21f', [0, 0.62, 0], [-0.35, 0, 0.12], [1.3, 1.3, 1.3]);
+    return b;
+  },
+  hourglass: () => {
+    const b = new B();
+    b.cyl(0.3, 0.3, 0.1, '#3d8bff', [0, 0.05, 0], [0, 0, 0], 20); b.cyl(0.3, 0.3, 0.1, '#3d8bff', [0, 0.95, 0], [0, 0, 0], 20);
+    b.cyl(0.05, 0.24, 0.38, '#dff3ff', [0, 0.69, 0], [0, 0, 0], 16); b.cyl(0.24, 0.05, 0.38, '#dff3ff', [0, 0.31, 0], [0, 0, 0], 16);
+    b.cyl(0.04, 0.2, 0.2, '#ffb21f', [0, 0.22, 0], [0, 0, 0], 16); b.cyl(0.14, 0.04, 0.12, '#ffb21f', [0, 0.6, 0], [0, 0, 0], 16);
+    return b;
+  },
   // ---------- hazard
   bomb: () => {
     const b = new B();

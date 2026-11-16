@@ -41,6 +41,7 @@ const STR = {
     login: 'مكافأة الدخول اليومية', day: 'يوم', comeTomorrow: 'ارجع بكرا للمكافأة الجاية!', toyGift: 'محل الألعاب عطاك:', gemBonus: 'جوهرة من البوتيك!',
     tut1: 'اسحب إصبعك لتحرّك الثقب 👆', tut2: 'ابلع الأغراض الصغيرة! 🕳️', tut3: 'كل ما تبلع بتكبر... الأغراض الكبيرة بدها ثقب أكبر', tut4: 'خلّص الأهداف قبل ما يخلص الوقت! 🎯',
     cityHint: 'كبسة على الأرض لتبني أول بيت 🏠',
+    streakBag: 'حقيبة الفوز', streakHint: 'اربح مراحل ورا بعض لتاخد ⚡ و⏳ مجاناً! إذا خسرت بيروحوا.', streakHave: 'عندك ⚡×{n} و⏳×{n} مجاناً بهالمرحلة!', streakLost: 'خسرت حقيبة الفوز 😢', selectBooster: 'اختار مساعدة', pre_bolt: 'برق', pre_hourglass: 'ساعة رملية', pre_boltD: 'بيكبّر الثقب ببداية المرحلة', pre_hourglassD: '+10 ثواني ببداية المرحلة',
     bombHintTitle: 'دير بالك! ⚠️', bombHintText: 'إذا بلعت هاي القنبلة 💣 بتنفجر وبتخسر المرحلة! بعّد عنها، والحلقة الحمرا بتساعدك تشوفها.', gotIt: 'فهمت!', boom: 'انفجرت! 💥', boomText: 'بلعت قنبلة! بدك تكمّل من وين وقفت؟', revive: 'كمّل',
     theme_xmas: 'عالم العيد 🎄', mat_festive: 'زينة العيد', bld_workshop: 'ورشة بابا نويل', pk_festivePct: '+{n}% زينة 🎄 من مراحل العيد',
     xmasTitle: 'موسم الأعياد', xmasBanner: 'مراحل العيد كل مرحلتين! ❄️', xmasEnds: 'بيخلص بعد {n} يوم', xmasGiftTitle: 'عيد ميلاد مجيد! 🎅',
@@ -87,6 +88,7 @@ const STR = {
     login: 'Daily login reward', day: 'Day', comeTomorrow: 'Come back tomorrow for the next reward!', toyGift: 'The toy store gave you:', gemBonus: 'A gem from the boutique!',
     tut1: 'Drag your finger to move the hole 👆', tut2: 'Swallow the small items! 🕳️', tut3: 'Swallowing makes you grow... big items need a bigger hole', tut4: 'Finish the goals before time runs out! 🎯',
     cityHint: 'Tap the plot to build your first house 🏠',
+    streakBag: 'Win streak bag', streakHint: 'Win levels in a row to get free ⚡ and ⏳! Losing empties the bag.', streakHave: 'You get ⚡×{n} and ⏳×{n} free this level!', streakLost: 'Win streak bag lost 😢', selectBooster: 'Select booster', pre_bolt: 'Lightning', pre_hourglass: 'Hourglass', pre_boltD: 'Bigger hole at the start', pre_hourglassD: '+10 seconds at the start',
     bombHintTitle: 'Watch out! ⚠️', bombHintText: 'If you swallow this bomb 💣 it explodes and you lose the level! Stay away — the red ring helps you spot it.', gotIt: 'Got it!', boom: 'Boom! 💥', boomText: 'You swallowed a bomb! Continue where you left off?', revive: 'Continue',
     theme_xmas: 'Holiday World 🎄', mat_festive: 'Festive', bld_workshop: "Santa's Workshop", pk_festivePct: '+{n}% 🎄 from holiday levels',
     xmasTitle: 'Holiday Season', xmasBanner: 'Holiday levels every 2nd level! ❄️', xmasEnds: 'Ends in {n} days', xmasGiftTitle: 'Merry Christmas! 🎅',
@@ -103,7 +105,7 @@ export function setLang(l) {
 export function getLang() { return lang; }
 export function t(key, vars) {
   let s = (STR[lang] && STR[lang][key]) || STR.en[key] || key;
-  if (vars) for (const k in vars) s = s.replace('{' + k + '}', fmt(vars[k]));
+  if (vars) for (const k in vars) s = s.split('{' + k + '}').join(fmt(vars[k]));
   return s;
 }
 export function fmt(n) {

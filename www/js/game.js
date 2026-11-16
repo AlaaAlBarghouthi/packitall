@@ -236,12 +236,22 @@ export class HoleGame {
         big: !!it.big, hazard: !!it.hazard, pickup: it.pickup || null, mover: !!it.mover, heading: Math.random() * 6.28, speed: 1.2 + Math.random() * 1.6, bob: Math.random() * 6.28, x: it.x, z: it.z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: (Math.random() - 0.5) * 8 };
     });
 
-    // pulsing red danger ring under every bomb
+    // win-streak / selected boosters waiting in front of the hole (swallow to activate)
+    const extras = [];
+    for (let i = 0; i < (opts.startGrow || 0); i++) extras.push(['bolt', 'grow']);
+    for (let i = 0; i < (opts.startTime || 0); i++) extras.push(['hourglass', 'time10']);
+    extras.forEach(([name, kind], i) => {
+      const md = getModel(name), x = this.hole.x + (i - (extras.length - 1) / 2) * 1.5, z = this.hole.z - 3.4;
+      const mesh = new THREE.Mesh(md.geo, itemMaterial); mesh.position.set(x, 0, z); mesh.castShadow = true; this.scene.add(mesh);
+      this.items.push({ mesh, name, scale: 1, r: md.foot, h: md.height, big: false, hazard: false, pickup: kind, mover: false, heading: 0, speed: 0,
+        bob: i * 0.7, x, z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: 3, boost: true });
+    });
+    // pulsing rings: red under bombs, gold under boosters
     this.hazRings = [];
     const ringGeo = new THREE.RingGeometry(1.0, 1.5, 32);
     this.items.forEach((it) => {
-      if (!it.hazard) return;
-      const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xff2a3a, transparent: true, opacity: 0.6, depthWrite: false }));
+      if (!it.hazard && !it.boost) return;
+      const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: it.boost ? 0xffd23f : 0xff2a3a, transparent: true, opacity: 0.6, depthWrite: false }));
       m.rotation.x = -Math.PI / 2; m.position.set(it.x, 0.03, it.z); m.scale.setScalar(it.r); this.scene.add(m); it.ring = m; this.hazRings.push(m);
     });
     this.invuln = 0;
@@ -500,7 +510,8 @@ export class HoleGame {
           if (Math.random() < dt * 0.3) it.heading += (Math.random() - 0.5) * 1.5;
           m.position.x = it.x; m.position.z = it.z; m.rotation.y = -it.heading;
         } else {
-          it.bob += dt * 3; m.position.y = 0.12 + Math.sin(it.bob) * 0.08; m.rotation.y += dt * 1.8;
+          it.bob += dt * 3; m.position.y = 0.12 + Math.sin(it.bob) * 0.08;
+          if (it.boost) m.rotation.y = Math.sin(it.bob * 0.6) * 0.45; else m.rotation.y += dt * 1.8;
         }
       }
       if (it.falling) {
@@ -592,6 +603,8 @@ export class HoleGame {
       if (it.pickup === 'coins') { this.coinsEarned += 25; $('#run-coins').textContent = fmt(this.coinsEarned); this.floater('+25 🪙', 'big-f'); sfx.coin(); }
       else if (it.pickup === 'time') { this.timeLeft += 5; this._hudTime(true); this.floater('+5s ⏱️', 'grow-f'); sfx.goal(); }
       else if (it.pickup === 'gem') { this.gemsRun++; this.floater('+1 💎', 'boost-f'); sfx.win(); }
+      else if (it.pickup === 'grow') { this.area *= 1.36; this.holeR = Math.min(MAX_R, Math.sqrt(this.area)); this.floater('⚡ ' + t('size') + ' ↑', 'grow-f'); sfx.booster(); }
+      else if (it.pickup === 'time10') { this.timeLeft += 10; this._hudTime(true); this.floater('+10s ⏳', 'grow-f'); sfx.goal(); }
       haptic('medium');
       return;
     }
