@@ -68,7 +68,7 @@ export class HoleGame {
     this.scene.fog = new THREE.Fog(th.fog, 40, 110);
 
     // lights
-    const hemi = new THREE.HemisphereLight(0xffffff, new THREE.Color(th.floor[0]), 1.6);
+    const hemi = new THREE.HemisphereLight(0xffffff, new THREE.Color(th.floor[0]), 1.25);
     this.scene.add(hemi);
     const sun = new THREE.DirectionalLight(0xffffff, 2.1);
     sun.position.set(-8, 20, 10);
@@ -114,13 +114,13 @@ export class HoleGame {
     this.holeGroup = new THREE.Group();
     const wellGeo = new THREE.CylinderGeometry(1, 1, 8, 48, 1, true);
     const cols = []; const pa = wellGeo.attributes.position;
-    for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); const k = (y + 4) / 8; cols.push(0.28 * k, 0.1 * k, 0.45 * k); }
+    for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); const k = (y + 4) / 8; const kk = Math.pow(k, 3); cols.push(0.1 * kk, 0.03 * kk, 0.2 * kk); }
     wellGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
     const well = new THREE.Mesh(wellGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide }));
     well.position.y = -4; this.holeGroup.add(well);
     const bottom = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshBasicMaterial({ color: 0x07020f }));
     bottom.rotation.x = -Math.PI / 2; bottom.position.y = -7.9; this.holeGroup.add(bottom);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.07, 10, 64), new THREE.MeshBasicMaterial({ color: 0xb36bff }));
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 10, 64), new THREE.MeshBasicMaterial({ color: 0xc58cff }));
     rim.rotation.x = Math.PI / 2; rim.position.y = 0.02; this.holeGroup.add(rim); this.rim = rim;
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 2.9), new THREE.MeshBasicMaterial({ map: this.glowTex, transparent: true, depthWrite: false }));
     glow.rotation.x = -Math.PI / 2; glow.position.y = 0.03; this.holeGroup.add(glow); this.glow = glow;

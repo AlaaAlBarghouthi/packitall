@@ -3,6 +3,20 @@
 import * as THREE from './lib/three.module.min.js';
 
 const C = (hex) => new THREE.Color(hex);
+const rbCache = new Map();
+function roundedBox(w, h, d, r) {
+  r = Math.min(r, w / 2 - 0.001, h / 2 - 0.001, d / 2 - 0.001);
+  const key = [w, h, d, r].map(v => v.toFixed(3)).join('_');
+  if (rbCache.has(key)) return rbCache.get(key);
+  const sw = w - 2 * r, sd = d - 2 * r, cr = Math.min(r, sw / 2, sd / 2) * 0.999;
+  const s = new THREE.Shape(), x = -sw / 2, y = -sd / 2;
+  s.moveTo(x + cr, y); s.lineTo(x + sw - cr, y); s.quadraticCurveTo(x + sw, y, x + sw, y + cr);
+  s.lineTo(x + sw, y + sd - cr); s.quadraticCurveTo(x + sw, y + sd, x + sw - cr, y + sd);
+  s.lineTo(x + cr, y + sd); s.quadraticCurveTo(x, y + sd, x, y + sd - cr); s.lineTo(x, y + cr); s.quadraticCurveTo(x, y, x + cr, y);
+  const g = new THREE.ExtrudeGeometry(s, { depth: Math.max(0.001, h - 2 * r), bevelEnabled: true, bevelThickness: r, bevelSize: r, bevelSegments: 3, curveSegments: 4 });
+  g.rotateX(-Math.PI / 2); g.translate(0, -(h - 2 * r) / 2, 0);
+  rbCache.set(key, g); return g;
+}
 
 export class B {
   constructor() { this.parts = []; }
@@ -15,15 +29,16 @@ export class B {
     return this;
   }
   box(w, h, d, c, p, r, s) { return this.add(new THREE.BoxGeometry(w, h, d), c, p, r, s); }
+  rbox(w, h, d, rad, c, p, r, s) { return this.add(roundedBox(w, h, d, rad), c, p, r, s); }
   cyl(rt, rb, h, c, p, r, seg = 16, s) { return this.add(new THREE.CylinderGeometry(rt, rb, h, seg), c, p, r, s); }
-  sph(rad, c, p, s, seg = 14) { return this.add(new THREE.SphereGeometry(rad, seg, Math.max(6, seg * 0.7 | 0)), c, p, [0, 0, 0], s); }
-  tor(R, t, c, p, r, arc = Math.PI * 2, seg = 24) { return this.add(new THREE.TorusGeometry(R, t, 10, seg, arc), c, p, r); }
+  sph(rad, c, p, s, seg = 20) { return this.add(new THREE.SphereGeometry(rad, seg, Math.max(6, seg * 0.7 | 0)), c, p, [0, 0, 0], s); }
+  tor(R, t, c, p, r, arc = Math.PI * 2, seg = 32) { return this.add(new THREE.TorusGeometry(R, t, 12, seg, arc), c, p, r); }
   cone(rad, h, c, p, r, seg = 14) { return this.add(new THREE.ConeGeometry(rad, h, seg), c, p, r); }
   build() {
     let pos = [], nor = [], col = [];
     const nm = new THREE.Matrix3();
     for (const pt of this.parts) {
-      const g = pt.geo.index ? pt.geo.toNonIndexed() : pt.geo;
+      const g = pt.geo.index ? pt.geo.toNonIndexed() : pt.geo.clone();
       g.applyMatrix4(pt.m);
       const P = g.attributes.position.array, N = g.attributes.normal.array;
       for (let i = 0; i < P.length; i += 3) {
@@ -52,8 +67,8 @@ const sprinkleColors = [WHITE, YELLOW, BLUE, GREEN, PURPLE, RED];
 
 function gift(box, ribbon) {
   const b = new B();
-  b.box(1, 0.9, 1, box, [0, 0.45, 0]);
-  b.box(1.04, 0.2, 1.04, box, [0, 0.95, 0]); // lid
+  b.rbox(1, 0.9, 1, 0.07, box, [0, 0.45, 0]);
+  b.rbox(1.06, 0.22, 1.06, 0.06, box, [0, 0.95, 0]); // lid
   b.box(0.18, 1.12, 1.06, ribbon, [0, 0.56, 0]);
   b.box(1.06, 1.12, 0.18, ribbon, [0, 0.56, 0]);
   b.tor(0.18, 0.06, ribbon, [-0.16, 1.15, 0], [0, 0, 0.6]);
@@ -65,8 +80,8 @@ export const MODELS = {
   // ---------- beauty
   perfume: () => {
     const b = new B();
-    b.box(0.9, 0.9, 0.5, '#ff9ccb', [0, 0.45, 0]);
-    b.box(0.7, 0.7, 0.52, '#ffc2de', [0, 0.45, 0]);
+    b.rbox(0.9, 0.9, 0.5, 0.14, '#ff9ccb', [0, 0.45, 0]);
+    b.rbox(0.68, 0.68, 0.53, 0.1, '#ffc2de', [0, 0.45, 0]);
     b.cyl(0.13, 0.13, 0.18, GOLD, [0, 0.99, 0]);
     b.cyl(0.2, 0.2, 0.28, GOLD, [0, 1.2, 0]);
     b.box(0.32, 0.08, 0.02, GOLD, [0, 0.55, 0.27]);
@@ -85,7 +100,7 @@ export const MODELS = {
   gift_red: () => gift(RED, WHITE),
   bag: () => {
     const b = new B();
-    b.box(0.95, 1.05, 0.45, '#b37dff', [0, 0.52, 0]);
+    b.rbox(0.95, 1.05, 0.45, 0.07, '#b37dff', [0, 0.52, 0]);
     b.tor(0.26, 0.04, GOLD, [0, 1.05, 0.12], [0, 0, 0], Math.PI);
     b.tor(0.26, 0.04, GOLD, [0, 1.05, -0.12], [0, 0, 0], Math.PI);
     b.sph(0.1, WHITE, [-0.07, 0.6, 0.23], [1, 1, 0.4]);
@@ -104,11 +119,11 @@ export const MODELS = {
   },
   camera: () => {
     const b = new B();
-    b.box(1.2, 0.8, 0.55, BLUE, [0, 0.4, 0]);
-    b.box(1.22, 0.24, 0.57, WHITE, [0, 0.12, 0]);
+    b.rbox(1.2, 0.8, 0.55, 0.14, BLUE, [0, 0.4, 0]);
+    b.rbox(1.22, 0.26, 0.57, 0.1, WHITE, [0, 0.13, 0]);
     b.cyl(0.3, 0.32, 0.25, '#e8eef9', [0, 0.42, 0.37], [Math.PI / 2, 0, 0]);
     b.cyl(0.2, 0.2, 0.27, BLACK, [0, 0.42, 0.39], [Math.PI / 2, 0, 0]);
-    b.box(0.25, 0.14, 0.2, WHITE, [-0.38, 0.86, 0]);
+    b.rbox(0.25, 0.16, 0.2, 0.05, WHITE, [-0.38, 0.86, 0]);
     b.cyl(0.08, 0.08, 0.08, RED, [0.4, 0.84, 0]);
     return b;
   },
@@ -210,9 +225,9 @@ export const MODELS = {
   },
   blocks: () => {
     const b = new B();
-    b.box(0.5, 0.5, 0.5, RED, [-0.28, 0.25, 0]);
-    b.box(0.5, 0.5, 0.5, BLUE, [0.28, 0.25, 0]);
-    b.box(0.5, 0.5, 0.5, YELLOW, [0, 0.75, 0], [0, 0.4, 0]);
+    b.rbox(0.5, 0.5, 0.5, 0.08, RED, [-0.28, 0.25, 0]);
+    b.rbox(0.5, 0.5, 0.5, 0.08, BLUE, [0.28, 0.25, 0]);
+    b.rbox(0.5, 0.5, 0.5, 0.08, YELLOW, [0, 0.75, 0], [0, 0.4, 0]);
     return b;
   },
   duck: () => {
@@ -235,8 +250,8 @@ export const MODELS = {
   },
   robot: () => {
     const b = new B();
-    b.box(0.7, 0.7, 0.5, '#9fb3c8', [0, 0.65, 0]);
-    b.box(0.55, 0.45, 0.45, '#c9d6e3', [0, 1.25, 0]);
+    b.rbox(0.7, 0.7, 0.5, 0.1, '#9fb3c8', [0, 0.65, 0]);
+    b.rbox(0.55, 0.45, 0.45, 0.1, '#c9d6e3', [0, 1.25, 0]);
     b.sph(0.07, SKY, [-0.13, 1.28, 0.23]); b.sph(0.07, SKY, [0.13, 1.28, 0.23]);
     b.cyl(0.03, 0.03, 0.25, BLACK, [0, 1.58, 0], [0, 0, 0], 6); b.sph(0.07, RED, [0, 1.72, 0]);
     b.box(0.2, 0.3, 0.25, '#7e93a8', [-0.18, 0.15, 0]); b.box(0.2, 0.3, 0.25, '#7e93a8', [0.18, 0.15, 0]);
@@ -287,7 +302,7 @@ export const MODELS = {
   mailbox: () => {
     const b = new B();
     b.cyl(0.06, 0.06, 0.9, BLACK, [0, 0.45, 0], [0, 0, 0], 8);
-    b.box(0.5, 0.4, 0.35, BLUE, [0, 1.05, 0]);
+    b.rbox(0.5, 0.4, 0.35, 0.06, BLUE, [0, 1.05, 0]);
     b.cyl(0.175, 0.175, 0.5, BLUE, [0, 1.25, 0], [0, 0, Math.PI / 2], 12);
     b.box(0.04, 0.2, 0.12, RED, [0.27, 1.25, 0]);
     return b;
@@ -296,7 +311,7 @@ export const MODELS = {
   taxi: () => carModel(YELLOW, 1.3),
   bus: () => {
     const b = new B();
-    b.box(3.4, 1.3, 1.2, ORANGE, [0, 0.95, 0]);
+    b.rbox(3.4, 1.3, 1.2, 0.18, ORANGE, [0, 0.95, 0]);
     b.box(3.42, 0.4, 1.22, SKY, [0, 1.2, 0]);
     b.box(3.44, 0.12, 1.24, WHITE, [0, 0.62, 0]);
     for (const x of [-1.1, 1.1]) for (const z of [-0.6, 0.6]) b.cyl(0.3, 0.3, 0.2, BLACK, [x, 0.3, z], [Math.PI / 2, 0, 0], 12);
@@ -304,7 +319,7 @@ export const MODELS = {
   },
   house: () => {
     const b = new B();
-    b.box(2.2, 1.6, 2.0, '#ffe6c7', [0, 0.8, 0]);
+    b.rbox(2.2, 1.6, 2.0, 0.08, '#ffe6c7', [0, 0.8, 0]);
     b.cone(1.75, 1.1, RED, [0, 2.15, 0], [0, Math.PI / 4, 0], 4);
     b.box(0.5, 0.9, 0.05, BROWN, [0, 0.45, 1.01]);
     b.box(0.45, 0.45, 0.05, '#ffe17a', [-0.65, 1.0, 1.01]); b.box(0.45, 0.45, 0.05, '#ffe17a', [0.65, 1.0, 1.01]);
@@ -320,16 +335,16 @@ export const MODELS = {
   },
   sandwich: () => {
     const b = new B();
-    b.box(0.9, 0.16, 0.9, TAN, [0, 0.08, 0]);
+    b.rbox(0.9, 0.16, 0.9, 0.06, TAN, [0, 0.08, 0]);
     b.box(0.95, 0.06, 0.95, GREEN, [0, 0.19, 0]);
     b.box(0.88, 0.1, 0.88, '#ff8a8a', [0, 0.27, 0]);
     b.box(0.92, 0.06, 0.92, YELLOW, [0, 0.35, 0]);
-    b.box(0.9, 0.16, 0.9, TAN, [0, 0.46, 0]);
+    b.rbox(0.9, 0.18, 0.9, 0.08, TAN, [0, 0.46, 0]);
     return b;
   },
   juice: () => {
     const b = new B();
-    b.box(0.5, 0.8, 0.4, YELLOW, [0, 0.4, 0]);
+    b.rbox(0.5, 0.8, 0.4, 0.06, YELLOW, [0, 0.4, 0]);
     b.box(0.5, 0.15, 0.4, ORANGE, [0, 0.86, 0], [0, 0, 0]);
     b.cyl(0.03, 0.03, 0.5, WHITE, [0.1, 1.1, 0], [0, 0, 0.3], 6);
     b.sph(0.15, ORANGE, [0, 0.45, 0.2], [1, 1, 0.3]);
@@ -337,7 +352,7 @@ export const MODELS = {
   },
   basket: () => {
     const b = new B();
-    b.box(1.6, 0.8, 1.1, '#d49a5b', [0, 0.4, 0]);
+    b.rbox(1.6, 0.8, 1.1, 0.1, '#d49a5b', [0, 0.4, 0]);
     b.box(1.65, 0.12, 1.15, '#b77c3f', [0, 0.82, 0]);
     b.tor(0.6, 0.06, '#b77c3f', [0, 0.85, 0], [0, 0, 0], Math.PI);
     b.box(1.2, 0.05, 0.9, RED, [0, 0.9, 0], [0, 0, 0.05]);
@@ -354,9 +369,9 @@ export const MODELS = {
 
 function carModel(color, s) {
   const b = new B();
-  b.box(1.6 * s, 0.5 * s, 0.85 * s, color, [0, 0.45 * s, 0]);
-  b.box(0.9 * s, 0.42 * s, 0.78 * s, color, [-0.05 * s, 0.9 * s, 0]);
-  b.box(0.92 * s, 0.3 * s, 0.8 * s, '#cdeeff', [-0.05 * s, 0.9 * s, 0]);
+  b.rbox(1.6 * s, 0.5 * s, 0.85 * s, 0.14 * s, color, [0, 0.45 * s, 0]);
+  b.rbox(0.9 * s, 0.44 * s, 0.78 * s, 0.12 * s, color, [-0.05 * s, 0.88 * s, 0]);
+  b.rbox(0.93 * s, 0.28 * s, 0.8 * s, 0.08 * s, '#cdeeff', [-0.05 * s, 0.9 * s, 0]);
   for (const x of [-0.5, 0.5]) for (const z of [-0.42, 0.42]) b.cyl(0.2 * s, 0.2 * s, 0.14 * s, BLACK, [x * s, 0.2 * s, z * s], [Math.PI / 2, 0, 0], 12);
   b.box(0.06, 0.12 * s, 0.2 * s, '#fff6b0', [0.81 * s, 0.5 * s, 0.25 * s]);
   b.box(0.06, 0.12 * s, 0.2 * s, '#fff6b0', [0.81 * s, 0.5 * s, -0.25 * s]);
@@ -375,7 +390,7 @@ export function getModel(name) {
   return cache[name];
 }
 
-export const itemMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.05 });
+export const itemMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.36, metalness: 0.04 });
 
 // Render any geometry to a small PNG data URL (goal icons, building thumbnails)
 let iconRenderer = null;

@@ -1,31 +1,31 @@
 // Level generator: themes, goals, item placement
 export const THEMES = [
   {
-    id: 'beauty', floor: ['#ffbcd9', '#ffdcec'], sky: '#ffc9e0', fog: '#ffd9ea',
+    id: 'beauty', floor: ['#ff9fcb', '#ffcfe5'], sky: '#ffc9e0', fog: '#ffd9ea',
     small: [['lipstick', 0.8], ['nailpolish', 0.8], ['perfume', 0.75], ['mirror', 0.8]],
     medium: [['gift_purple', 1.0], ['bag', 1.0], ['headphones', 1.0], ['camera', 1.0], ['donut', 0.95]],
     large: [['teddy', 2.0], ['gift_yellow', 2.3], ['gift_red', 3.0], ['bag', 2.8]],
   },
   {
-    id: 'sweets', floor: ['#ffe9c2', '#fff4dc'], sky: '#ffe2b0', fog: '#ffeccb',
+    id: 'sweets', floor: ['#ffd58a', '#ffecc2'], sky: '#ffe2b0', fog: '#ffeccb',
     small: [['candy', 0.7], ['macaron', 0.75], ['donut', 0.8], ['apple', 0.8]],
     medium: [['cupcake', 1.0], ['icecream', 1.0], ['lollipop', 1.0], ['donut', 1.3]],
     large: [['cake', 1.6], ['cupcake', 2.6], ['icecream', 2.6], ['cake', 2.4]],
   },
   {
-    id: 'toys', floor: ['#cfe8ff', '#e6f3ff'], sky: '#bfe0ff', fog: '#d5ebff',
+    id: 'toys', floor: ['#a6d3ff', '#d2e9ff'], sky: '#bfe0ff', fog: '#d5ebff',
     small: [['blocks', 0.6], ['ball', 0.6], ['duck', 0.7], ['candy', 0.7]],
     medium: [['teddy', 0.9], ['robot', 0.9], ['rocket', 0.9], ['toycar', 1.0], ['gift_purple', 1.0]],
     large: [['teddy', 2.4], ['robot', 2.4], ['rocket', 2.6], ['ball', 3.2]],
   },
   {
-    id: 'picnic', floor: ['#c9f2b8', '#ddf8d0'], sky: '#c4ecff', fog: '#d9f4e6',
+    id: 'picnic', floor: ['#a6e68c', '#cdf4bb'], sky: '#c4ecff', fog: '#d9f4e6',
     small: [['apple', 0.8], ['juice', 0.8], ['sandwich', 0.7], ['candy', 0.7]],
     medium: [['watermelon', 1.0], ['cupcake', 1.0], ['basket', 0.8], ['ball', 1.0]],
     large: [['basket', 2.0], ['watermelon', 2.6], ['tree', 1.8], ['bench', 1.8]],
   },
   {
-    id: 'city', floor: ['#d9dbe8', '#e9eaf3'], sky: '#bcd6ff', fog: '#d6e2f7',
+    id: 'city', floor: ['#bfc3db', '#dcdeee'], sky: '#bcd6ff', fog: '#d6e2f7',
     small: [['cone', 0.8], ['hydrant', 0.8], ['mailbox', 0.75], ['apple', 0.7]],
     medium: [['bench', 0.9], ['lamp', 0.8], ['tree', 0.9], ['car', 0.85], ['taxi', 0.85]],
     large: [['bus', 1.0], ['house', 1.2], ['car', 2.0], ['house', 1.7]],
