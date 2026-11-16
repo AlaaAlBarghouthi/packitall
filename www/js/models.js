@@ -31,8 +31,8 @@ export class B {
   box(w, h, d, c, p, r, s) { return this.add(new THREE.BoxGeometry(w, h, d), c, p, r, s); }
   rbox(w, h, d, rad, c, p, r, s) { return this.add(roundedBox(w, h, d, rad), c, p, r, s); }
   cyl(rt, rb, h, c, p, r, seg = 16, s) { return this.add(new THREE.CylinderGeometry(rt, rb, h, seg), c, p, r, s); }
-  sph(rad, c, p, s, seg = 20) { return this.add(new THREE.SphereGeometry(rad, seg, Math.max(6, seg * 0.7 | 0)), c, p, [0, 0, 0], s); }
-  tor(R, t, c, p, r, arc = Math.PI * 2, seg = 32) { return this.add(new THREE.TorusGeometry(R, t, 12, seg, arc), c, p, r); }
+  sph(rad, c, p, s, seg = 16) { return this.add(new THREE.SphereGeometry(rad, seg, Math.max(6, seg * 0.7 | 0)), c, p, [0, 0, 0], s); }
+  tor(R, t, c, p, r, arc = Math.PI * 2, seg = 28) { return this.add(new THREE.TorusGeometry(R, t, 10, seg, arc), c, p, r); }
   cone(rad, h, c, p, r, seg = 14) { return this.add(new THREE.ConeGeometry(rad, h, seg), c, p, r); }
   build() {
     let pos = [], nor = [], col = [];
@@ -356,6 +356,154 @@ export const MODELS = {
     b.box(1.65, 0.12, 1.15, '#b77c3f', [0, 0.82, 0]);
     b.tor(0.6, 0.06, '#b77c3f', [0, 0.85, 0], [0, 0, 0], Math.PI);
     b.box(1.2, 0.05, 0.9, RED, [0, 0.9, 0], [0, 0, 0.05]);
+    return b;
+  },
+  // ---------- more beauty
+  ring: () => {
+    const b = new B();
+    b.rbox(0.62, 0.4, 0.62, 0.1, '#ff6fae', [0, 0.2, 0]); b.rbox(0.64, 0.12, 0.64, 0.05, '#ff9cc8', [0, 0.42, 0]);
+    b.tor(0.16, 0.04, GOLD, [0, 0.62, 0], [0, 0, 0], Math.PI * 2, 20);
+    b.add(new THREE.OctahedronGeometry(0.11, 0), '#bff3ff', [0, 0.82, 0], [0, 0.3, 0], [1, 0.8, 1]);
+    return b;
+  },
+  heels: () => {
+    const b = new B(), c = '#ff3d7f';
+    b.rbox(0.9, 0.12, 0.32, 0.05, c, [0, 0.36, 0], [0, 0, -0.42]); b.rbox(0.38, 0.1, 0.34, 0.05, c, [0.42, 0.05, 0]);
+    b.cyl(0.03, 0.05, 0.42, c, [-0.36, 0.21, 0], [0, 0, 0], 8); b.rbox(0.3, 0.3, 0.34, 0.08, c, [-0.28, 0.6, 0]);
+    b.tor(0.12, 0.03, GOLD, [0.25, 0.35, 0.17], [Math.PI / 2, 0, 0], Math.PI, 10);
+    return b;
+  },
+  sunglasses: () => {
+    const b = new B();
+    for (const x of [-0.24, 0.24]) { b.cyl(0.2, 0.2, 0.05, '#2b2233', [x, 0.22, 0], [Math.PI / 2, 0, 0], 18); b.cyl(0.16, 0.16, 0.06, '#7a5cff', [x, 0.22, 0.01], [Math.PI / 2, 0, 0], 18); }
+    b.box(0.12, 0.04, 0.04, '#2b2233', [0, 0.3, 0]); b.box(0.04, 0.04, 0.6, '#2b2233', [-0.44, 0.28, -0.3]); b.box(0.04, 0.04, 0.6, '#2b2233', [0.44, 0.28, -0.3]);
+    return b;
+  },
+  brush: () => {
+    const b = new B();
+    b.rbox(0.42, 0.12, 0.6, 0.06, '#b37dff', [0, 0.06, 0.2]); b.rbox(0.14, 0.1, 0.6, 0.05, '#b37dff', [0, 0.05, -0.38]);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 5; j++) b.cyl(0.02, 0.02, 0.12, WHITE, [-0.13 + i * 0.087, 0.17, j * 0.1], [0, 0, 0], 4);
+    return b;
+  },
+  // ---------- more sweets
+  chocobar: () => {
+    const b = new B();
+    b.rbox(0.8, 0.1, 0.45, 0.03, '#6b3a1e', [0, 0.05, 0]);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) b.rbox(0.17, 0.06, 0.18, 0.03, '#7c4523', [-0.29 + i * 0.195, 0.12, -0.1 + j * 0.2]);
+    b.rbox(0.42, 0.16, 0.47, 0.04, '#e8323e', [0.22, 0.08, 0]); b.box(0.06, 0.17, 0.48, GOLD, [0.06, 0.08, 0]);
+    return b;
+  },
+  popsicle: () => {
+    const b = new B();
+    b.rbox(0.12, 0.45, 0.06, 0.03, '#e9c48a', [0, 0.22, 0]);
+    b.rbox(0.42, 0.62, 0.22, 0.12, '#ff6fae', [0, 0.72, 0]); b.rbox(0.44, 0.22, 0.24, 0.1, '#ffd23f', [0, 0.92, 0]); b.rbox(0.44, 0.15, 0.24, 0.06, '#7fe0c0', [0, 0.52, 0]);
+    return b;
+  },
+  milkshake: () => {
+    const b = new B();
+    b.cyl(0.3, 0.2, 0.75, '#ffd1e6', [0, 0.38, 0], [0, 0, 0], 18); b.cyl(0.31, 0.31, 0.06, WHITE, [0, 0.76, 0], [0, 0, 0], 18);
+    b.sph(0.3, WHITE, [0, 0.82, 0], [1, 0.6, 1]); b.sph(0.08, RED, [0.05, 1.0, 0]);
+    b.cyl(0.03, 0.03, 0.7, '#ff3b4e', [0.12, 1.05, 0], [0, 0, -0.25], 6);
+    return b;
+  },
+  pancakes: () => {
+    const b = new B();
+    b.cyl(0.55, 0.55, 0.04, WHITE, [0, 0.02, 0], [0, 0, 0], 22);
+    for (let i = 0; i < 4; i++) b.cyl(0.42, 0.42, 0.11, '#e3a85c', [0, 0.1 + i * 0.11, 0], [0, i * 0.3, 0], 20);
+    b.cyl(0.36, 0.42, 0.05, '#c26a1a', [0, 0.55, 0], [0, 0, 0], 20); b.rbox(0.18, 0.08, 0.18, 0.03, '#fff3b0', [0.05, 0.6, 0]);
+    return b;
+  },
+  // ---------- more toys
+  dice: () => {
+    const b = new B();
+    b.rbox(0.6, 0.6, 0.6, 0.12, WHITE, [0, 0.3, 0], [0, 0.4, 0]);
+    const d = [[0, 0.61, 0], [0.15, 0.61, 0.15], [-0.15, 0.61, -0.15]];
+    d.forEach((p) => b.sph(0.05, RED, p, [1, 0.4, 1]));
+    return b;
+  },
+  yoyo: () => {
+    const b = new B();
+    b.cyl(0.32, 0.32, 0.14, '#3d8bff', [0, 0.32, -0.1], [Math.PI / 2, 0, 0], 22); b.cyl(0.32, 0.32, 0.14, '#3d8bff', [0, 0.32, 0.1], [Math.PI / 2, 0, 0], 22);
+    b.cyl(0.08, 0.08, 0.1, WHITE, [0, 0.32, 0], [Math.PI / 2, 0, 0], 10); b.sph(0.1, YELLOW, [0, 0.32, 0.18], [1, 1, 0.4]); b.sph(0.1, YELLOW, [0, 0.32, -0.18], [1, 1, 0.4]);
+    return b;
+  },
+  train: () => {
+    const b = new B();
+    b.rbox(1.0, 0.45, 0.55, 0.08, RED, [0, 0.38, 0]); b.rbox(0.42, 0.45, 0.58, 0.08, '#3d8bff', [-0.32, 0.8, 0]);
+    b.cyl(0.18, 0.18, 0.5, '#2b2233', [0.25, 0.75, 0], [0, 0, Math.PI / 2], 14); b.cyl(0.08, 0.12, 0.3, '#2b2233', [0.3, 0.9, 0], [0, 0, 0], 10);
+    for (const x of [-0.32, 0.05, 0.38]) for (const z of [-0.3, 0.3]) b.cyl(0.16, 0.16, 0.08, YELLOW, [x, 0.16, z], [Math.PI / 2, 0, 0], 14);
+    b.rbox(0.44, 0.08, 0.6, 0.03, YELLOW, [-0.32, 1.06, 0]);
+    return b;
+  },
+  // ---------- more picnic
+  hotdog: () => {
+    const b = new B();
+    b.rbox(0.9, 0.22, 0.38, 0.11, '#e9b673', [0, 0.11, 0]); b.cyl(0.1, 0.1, 1.0, '#d4553a', [0, 0.26, 0], [0, 0, Math.PI / 2], 12);
+    b.sph(0.1, '#d4553a', [0.5, 0.26, 0]); b.sph(0.1, '#d4553a', [-0.5, 0.26, 0]);
+    for (let i = 0; i < 5; i++) b.box(0.14, 0.03, 0.04, YELLOW, [-0.32 + i * 0.16, 0.37, (i % 2 ? 0.03 : -0.03)], [0, i % 2 ? 0.6 : -0.6, 0]);
+    return b;
+  },
+  frisbee: () => {
+    const b = new B();
+    b.cyl(0.45, 0.48, 0.08, '#ff9a3c', [0, 0.04, 0], [0, 0, 0], 26); b.tor(0.42, 0.04, '#ff7a1c', [0, 0.08, 0], [Math.PI / 2, 0, 0], Math.PI * 2, 26);
+    b.tor(0.2, 0.025, WHITE, [0, 0.09, 0], [Math.PI / 2, 0, 0], Math.PI * 2, 20);
+    return b;
+  },
+  flowerpot: () => {
+    const b = new B();
+    b.cyl(0.3, 0.22, 0.42, '#d4733a', [0, 0.21, 0], [0, 0, 0], 16); b.cyl(0.33, 0.33, 0.08, '#e08850', [0, 0.42, 0], [0, 0, 0], 16);
+    const fc = ['#ff6fae', '#ffd23f', '#b98cff', WHITE, '#ff8a5c'];
+    for (let i = 0; i < 5; i++) { const a = i * 1.26, x = Math.cos(a) * 0.15, z = Math.sin(a) * 0.15, h = 0.75 + (i % 2) * 0.15;
+      b.cyl(0.02, 0.02, h - 0.4, GREEN, [x, 0.4 + (h - 0.4) / 2, z], [0, 0, 0], 4); b.sph(0.1, fc[i], [x, h, z]); b.sph(0.04, YELLOW, [x, h + 0.06, z]); }
+    return b;
+  },
+  parasol: () => {
+    const b = new B();
+    b.cyl(0.04, 0.04, 1.5, WHITE, [0, 0.75, 0], [0, 0, 0], 8); b.cyl(0.18, 0.2, 0.08, '#d9d4cf', [0, 0.04, 0], [0, 0, 0], 12);
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; b.add(new THREE.ConeGeometry(0.85, 0.35, 3, 1, true, a, Math.PI / 4), i % 2 ? WHITE : '#ff5a8a', [0, 1.55, 0]); }
+    b.sph(0.06, WHITE, [0, 1.74, 0]);
+    return b;
+  },
+  // ---------- more city
+  trashbin: () => {
+    const b = new B();
+    b.cyl(0.3, 0.26, 0.7, '#4cb46f', [0, 0.35, 0], [0, 0, 0], 16); b.cyl(0.33, 0.33, 0.08, '#3a9a5a', [0, 0.72, 0], [0, 0, 0], 16);
+    b.rbox(0.25, 0.06, 0.08, 0.03, '#2a7a44', [0, 0.79, 0]);
+    return b;
+  },
+  trafficlight: () => {
+    const b = new B();
+    b.cyl(0.05, 0.06, 1.4, '#3b3446', [0, 0.7, 0], [0, 0, 0], 8); b.rbox(0.3, 0.75, 0.25, 0.06, '#2b2233', [0, 1.6, 0]);
+    b.sph(0.08, '#ff3b4e', [0, 1.84, 0.12]); b.sph(0.08, '#ffd23f', [0, 1.6, 0.12]); b.sph(0.08, '#4cd07d', [0, 1.36, 0.12]);
+    return b;
+  },
+  bike: () => {
+    const b = new B();
+    for (const x of [-0.45, 0.45]) { b.tor(0.28, 0.04, '#2b2233', [x, 0.3, 0], [0, 0, 0], Math.PI * 2, 22); b.cyl(0.03, 0.03, 0.06, '#c0c0c0', [x, 0.3, 0], [Math.PI / 2, 0, 0], 6); }
+    b.cyl(0.03, 0.03, 0.62, '#3d8bff', [0, 0.45, 0], [0, 0, Math.PI / 2 - 0.3], 6); b.cyl(0.03, 0.03, 0.5, '#3d8bff', [-0.2, 0.5, 0], [0, 0, 0.5], 6);
+    b.cyl(0.03, 0.03, 0.45, '#3d8bff', [0.35, 0.55, 0], [0, 0, 0.3], 6); b.rbox(0.22, 0.05, 0.1, 0.02, '#2b2233', [-0.25, 0.73, 0]);
+    b.box(0.04, 0.04, 0.4, '#2b2233', [0.42, 0.78, 0]);
+    return b;
+  },
+  // ---------- floor pickups
+  coinpile: () => {
+    const b = new B();
+    for (let i = 0; i < 5; i++) b.cyl(0.22, 0.22, 0.07, i % 2 ? '#ffd23f' : '#f5b423', [((i * 37) % 5) * 0.012, 0.035 + i * 0.07, 0], [0, 0, 0], 18);
+    b.cyl(0.22, 0.22, 0.07, '#ffd23f', [0.3, 0.035, 0.1], [0, 0, 0], 18); b.cyl(0.22, 0.22, 0.07, '#f5b423', [0.28, 0.105, 0.12], [0, 0, 0], 18);
+    return b;
+  },
+  clock: () => {
+    const b = new B();
+    b.cyl(0.3, 0.3, 0.16, '#ff5a6e', [0, 0.4, 0], [Math.PI / 2, 0, 0], 22); b.cyl(0.24, 0.24, 0.17, WHITE, [0, 0.4, 0.01], [Math.PI / 2, 0, 0], 22);
+    b.box(0.03, 0.17, 0.02, '#2b2233', [0, 0.47, 0.1]); b.box(0.13, 0.03, 0.02, '#2b2233', [0.06, 0.4, 0.1]);
+    b.sph(0.1, '#ff5a6e', [-0.2, 0.68, 0], [1, 0.7, 0.7]); b.sph(0.1, '#ff5a6e', [0.2, 0.68, 0], [1, 0.7, 0.7]);
+    b.cyl(0.03, 0.03, 0.18, '#ff5a6e', [-0.18, 0.12, 0], [0, 0, 0.4], 6); b.cyl(0.03, 0.03, 0.18, '#ff5a6e', [0.18, 0.12, 0], [0, 0, -0.4], 6);
+    return b;
+  },
+  gem: () => {
+    const b = new B();
+    b.add(new THREE.OctahedronGeometry(0.32, 0), '#e04bff', [0, 0.42, 0], [0, 0.4, 0], [1, 1.25, 1]);
+    b.add(new THREE.OctahedronGeometry(0.2, 0), '#ff9cff', [0, 0.47, 0.06], [0, 0.4, 0], [1, 1.2, 1]);
     return b;
   },
   // ---------- hazard

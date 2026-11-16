@@ -32,6 +32,8 @@ export const MATS = {
 };
 export const MAT_ORDER = Object.keys(MATS);
 export const MATERIAL_OF = {
+  ring: 'gift', heels: 'gift', sunglasses: 'gift', brush: 'gift', chocobar: 'sweet', popsicle: 'sweet', milkshake: 'sweet', pancakes: 'sweet',
+  dice: 'toy', yoyo: 'toy', train: 'toy', hotdog: 'nature', frisbee: 'nature', flowerpot: 'nature', parasol: 'nature', trashbin: 'city', trafficlight: 'city', bike: 'city',
   perfume: 'gift', lipstick: 'gift', gift_purple: 'gift', gift_yellow: 'gift', gift_red: 'gift', bag: 'gift', headphones: 'gift', camera: 'gift', mirror: 'gift', nailpolish: 'gift',
   donut: 'sweet', cupcake: 'sweet', candy: 'sweet', lollipop: 'sweet', icecream: 'sweet', macaron: 'sweet', cake: 'sweet',
   teddy: 'toy', ball: 'toy', blocks: 'toy', duck: 'toy', rocket: 'toy', robot: 'toy', toycar: 'toy',

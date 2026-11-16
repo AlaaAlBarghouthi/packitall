@@ -374,7 +374,8 @@ function commitRun(win, res) {
   const mats = { ...game.matsRun }; St.addMats(mats);
   S.stats.swallowed += game.swallowed;
   St.progressTask('swallow', game.swallowed);
-  game.swallowed = 0; game.coinsEarned = 0; game.matsRun = {};
+  if (game.gemsRun) S.gems += game.gemsRun;
+  game.swallowed = 0; game.coinsEarned = 0; game.matsRun = {}; game.gemsRun = 0;
   let gem = 0;
   if (win) {
     S.stats.levels++; St.progressTask('levels', 1);

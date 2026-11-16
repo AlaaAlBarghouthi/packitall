@@ -24,6 +24,49 @@ function checkerTexture(a, b) {
   return tx;
 }
 
+// ---- floor art atlas (4 cells) per world
+const DECALS = {
+  beauty: [['heart', '#ff7fb5'], ['star', '#ffffff'], ['flower', '#ffb3d6'], ['bow', '#c58cff']],
+  sweets: [['sprinkles', '#ff7fb5'], ['swirl', '#ffffff'], ['drip', '#c97b4a'], ['star', '#ff9fc8']],
+  toys:   [['puzzle', '#ffd23f'], ['star', '#ffffff'], ['target', '#ff6f6f'], ['puzzle', '#7fe0c0']],
+  picnic: [['blanket', '#ff5a5a'], ['flower', '#ffffff'], ['grass', '#6fcf5a'], ['flower', '#ffd23f']],
+  city:   [['zebra', '#ffffff'], ['arrow', '#ffffff'], ['manhole', '#8a8ea0'], ['parking', '#3d8bff']],
+  xmas:   [['snowflake', '#ffffff'], ['star', '#ffd23f'], ['holly', '#2fae55'], ['snowflake', '#cfe8ff']],
+};
+const atlasCache = {};
+function decalAtlas(id) {
+  if (atlasCache[id]) return atlasCache[id];
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  (DECALS[id] || DECALS.beauty).forEach(([shape, col], i) => {
+    g.save(); g.translate((i % 2) * 256 + 128, Math.floor(i / 2) * 256 + 128); g.fillStyle = col; g.strokeStyle = col; g.lineCap = 'round'; g.lineJoin = 'round';
+    drawDecal(g, shape, col); g.restore();
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; atlasCache[id] = t; return t;
+}
+function drawDecal(g, shape, col) {
+  const star = (r1, r2, n) => { g.beginPath(); for (let i = 0; i < n * 2; i++) { const r = i % 2 ? r2 : r1, a = i * Math.PI / n - Math.PI / 2; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); };
+  g.globalAlpha = 0.55;
+  switch (shape) {
+    case 'heart': g.beginPath(); g.moveTo(0, 70); g.bezierCurveTo(-110, -10, -60, -100, 0, -45); g.bezierCurveTo(60, -100, 110, -10, 0, 70); g.fill(); break;
+    case 'star': star(100, 45, 5); break;
+    case 'flower': for (let i = 0; i < 6; i++) { g.beginPath(); const a = i * Math.PI / 3; g.ellipse(Math.cos(a) * 52, Math.sin(a) * 52, 42, 30, a, 0, 7); g.fill(); } g.globalAlpha = 0.8; g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(0, 0, 30, 0, 7); g.fill(); break;
+    case 'bow': g.beginPath(); g.moveTo(0, 0); g.lineTo(-100, -55); g.lineTo(-100, 55); g.closePath(); g.fill(); g.beginPath(); g.moveTo(0, 0); g.lineTo(100, -55); g.lineTo(100, 55); g.closePath(); g.fill(); g.beginPath(); g.arc(0, 0, 22, 0, 7); g.fill(); break;
+    case 'sprinkles': ['#ff7fb5', '#ffd23f', '#7fe0c0', '#ffffff', '#b98cff'].forEach((cc, k) => { for (let j = 0; j < 4; j++) { g.save(); g.fillStyle = cc; g.rotate(k * 1.3 + j * 1.7); g.translate(25 + j * 22, k * 9 - 18); g.fillRect(-14, -5, 28, 10); g.restore(); } }); break;
+    case 'swirl': g.lineWidth = 16; g.beginPath(); for (let a = 0; a < 14; a += 0.1) { const r = a * 7.5; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.stroke(); break;
+    case 'drip': g.beginPath(); g.moveTo(-110, -60); g.lineTo(110, -60); for (let x = 110; x >= -110; x -= 44) { g.lineTo(x, -20); g.arc(x - 22, 10 + (x % 3) * 10, 18, 0, Math.PI); } g.closePath(); g.fill(); break;
+    case 'puzzle': g.fillRect(-70, -70, 140, 140); g.beginPath(); g.arc(0, -70, 28, 0, 7); g.arc(70, 0, 28, 0, 7); g.fill(); g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(-70, 0, 28, 0, 7); g.arc(0, 70, 28, 0, 7); g.fill(); break;
+    case 'target': g.lineWidth = 18; [90, 55, 20].forEach((r) => { g.beginPath(); g.arc(0, 0, r, 0, 7); r === 20 ? g.fill() : g.stroke(); }); break;
+    case 'blanket': g.globalAlpha = 0.5; for (let i = -3; i < 3; i++) for (let j = -3; j < 3; j++) { g.fillStyle = (i + j) % 2 ? col : '#ffffff'; g.fillRect(i * 38, j * 38, 38, 38); } break;
+    case 'grass': g.lineWidth = 10; for (let i = -4; i <= 4; i++) { g.beginPath(); g.moveTo(i * 18, 60); g.quadraticCurveTo(i * 22, 0, i * 30, -50 + Math.abs(i) * 10); g.stroke(); } break;
+    case 'zebra': g.globalAlpha = 0.7; for (let i = -3; i <= 3; i++) g.fillRect(i * 34 - 12, -110, 24, 220); break;
+    case 'arrow': g.globalAlpha = 0.7; g.beginPath(); g.moveTo(0, -110); g.lineTo(70, -20); g.lineTo(25, -20); g.lineTo(25, 110); g.lineTo(-25, 110); g.lineTo(-25, -20); g.lineTo(-70, -20); g.closePath(); g.fill(); break;
+    case 'manhole': g.globalAlpha = 0.6; g.beginPath(); g.arc(0, 0, 90, 0, 7); g.fill(); g.strokeStyle = '#ffffff'; g.lineWidth = 6; for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(-80, i * 22); g.lineTo(80, i * 22); g.stroke(); } break;
+    case 'parking': g.globalAlpha = 0.6; g.beginPath(); g.roundRect(-90, -90, 180, 180, 30); g.fill(); g.fillStyle = '#ffffff'; g.font = 'bold 150px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('P', 0, 8); break;
+    case 'snowflake': g.lineWidth = 14; for (let i = 0; i < 6; i++) { g.save(); g.rotate(i * Math.PI / 3); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -100); g.moveTo(0, -60); g.lineTo(-28, -85); g.moveTo(0, -60); g.lineTo(28, -85); g.stroke(); g.restore(); } break;
+    case 'holly': for (const a of [-0.6, 0.6]) { g.save(); g.rotate(a); g.beginPath(); g.ellipse(0, -50, 30, 62, 0, 0, 7); g.fill(); g.restore(); } g.globalAlpha = 0.85; g.fillStyle = '#e8323e'; [[-16, 10], [16, 10], [0, -8]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 18, 0, 7); g.fill(); }); break;
+  }
+}
+
 // ---- hole skins
 export const SKINS = {
   classic: { rim: 0xc58cff, glow: [190, 110, 255] },
@@ -74,7 +117,7 @@ export class HoleGame {
     this.holeR = r0; this.area = r0 * r0; this.bonusR = 1; this.r0 = r0;
     this.hole = new THREE.Vector3(0, 0, lvl.H * 0.75);
     this.vel = new THREE.Vector2();
-    this.coinsEarned = 0; this.swallowed = 0; this.combo = 0; this.comboT = 0; this.matsRun = {};
+    this.coinsEarned = 0; this.swallowed = 0; this.combo = 0; this.comboT = 0; this.matsRun = {}; this.gemsRun = 0;
     this.active = {}; // booster timers
     this.ended = false; this.extraUsed = false; this.tooBigCooldown = 0;
     this.countdown = 1.6; this._camInit = false;
@@ -99,17 +142,32 @@ export class HoleGame {
     const tex = checkerTexture(th.floor[0], th.floor[1]);
     tex.repeat.set(fw / 4, fh / 4);
     const floorMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
-    floorMat.onBeforeCompile = (sh) => {
+    const patchHole = (mat) => { mat.onBeforeCompile = (sh) => {
       sh.uniforms.uHole = this.uniforms.uHole; sh.uniforms.uHoleR = this.uniforms.uHoleR;
       sh.vertexShader = 'varying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>',
         '#include <begin_vertex>\n vWPos = (modelMatrix * vec4(position,1.0)).xyz;');
       sh.fragmentShader = 'uniform vec2 uHole; uniform float uHoleR; varying vec3 vWPos;\n' +
         sh.fragmentShader.replace('#include <clipping_planes_fragment>',
           'if (distance(vWPos.xz, uHole) < uHoleR) discard;\n#include <clipping_planes_fragment>');
-    };
+    }; };
+    patchHole(floorMat);
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(fw, fh), floorMat);
     floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
     this.scene.add(floor); this.floor = floor;
+    // theme floor art (decals), merged into one mesh
+    if (th.decal) {
+      const dm = new THREE.MeshBasicMaterial({ map: decalAtlas(th.decal), transparent: true, depthWrite: false, opacity: 0.85 });
+      patchHole(dm);
+      const nDec = Math.round(lvl.W * lvl.H / 28), pos = [], uv = [], idx = [];
+      for (let i = 0; i < nDec; i++) {
+        const x = (Math.random() * 2 - 1) * (lvl.W - 2), z = (Math.random() * 2 - 1) * (lvl.H - 2), sz = 1.6 + Math.random() * 2.6, a = Math.random() * 6.28, cell = i % 4;
+        const u0 = (cell % 2) * 0.5, v0 = Math.floor(cell / 2) * 0.5, b = i * 4, c = Math.cos(a) * sz, sn = Math.sin(a) * sz, y = 0.006 + (i % 9) * 0.0004;
+        pos.push(x - c + sn, y, z - sn - c, x + c + sn, y, z + sn - c, x + c - sn, y, z + sn + c, x - c - sn, y, z - sn + c);
+        uv.push(u0, v0, u0 + 0.5, v0, u0 + 0.5, v0 + 0.5, u0, v0 + 0.5); idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
+      }
+      const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); dg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); dg.setIndex(idx);
+      this.scene.add(new THREE.Mesh(dg, dm));
+    }
 
     // out-of-bounds tint + border fence
     const borderMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
@@ -172,10 +230,10 @@ export class HoleGame {
       const m = getModel(it.name);
       const mesh = new THREE.Mesh(m.geo, itemMaterial);
       mesh.position.set(it.x, 0, it.z); mesh.rotation.y = it.rot; mesh.scale.setScalar(it.scale);
-      mesh.castShadow = true; mesh.receiveShadow = false;
+      mesh.castShadow = m.foot * it.scale >= 0.35; mesh.receiveShadow = false;
       this.scene.add(mesh);
       return { mesh, name: it.name, scale: it.scale, r: m.foot * it.scale, h: m.height * it.scale,
-        big: !!it.big, hazard: !!it.hazard, x: it.x, z: it.z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: (Math.random() - 0.5) * 8 };
+        big: !!it.big, hazard: !!it.hazard, pickup: it.pickup || null, mover: !!it.mover, heading: Math.random() * 6.28, speed: 1.2 + Math.random() * 1.6, bob: Math.random() * 6.28, x: it.x, z: it.z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: (Math.random() - 0.5) * 8 };
     });
 
     // pulsing red danger ring under every bomb
@@ -433,6 +491,18 @@ export class HoleGame {
     for (const it of this.items) {
       if (!it.alive) continue;
       const m = it.mesh;
+      if (!it.falling && (it.mover || it.pickup) && !it.tilt) {
+        if (it.mover) {
+          it.x += Math.cos(it.heading) * it.speed * dt; it.z += Math.sin(it.heading) * it.speed * dt;
+          const W = this.level.W - it.r - 0.5, H = this.level.H - it.r - 0.5;
+          if (Math.abs(it.x) > W) { it.x = Math.sign(it.x) * W; it.heading = Math.PI - it.heading; }
+          if (Math.abs(it.z) > H) { it.z = Math.sign(it.z) * H; it.heading = -it.heading; }
+          if (Math.random() < dt * 0.3) it.heading += (Math.random() - 0.5) * 1.5;
+          m.position.x = it.x; m.position.z = it.z; m.rotation.y = -it.heading;
+        } else {
+          it.bob += dt * 3; m.position.y = 0.12 + Math.sin(it.bob) * 0.08; m.rotation.y += dt * 1.8;
+        }
+      }
       if (it.falling) {
         it.vy -= 30 * dt; it.y += it.vy * dt;
         // stay inside the hole while falling
@@ -518,6 +588,13 @@ export class HoleGame {
     this.scene.remove(it.mesh);
     if (it.ring) { this.scene.remove(it.ring); it.ring = null; }
     if (it.hazard) return this._explode(it);
+    if (it.pickup) {
+      if (it.pickup === 'coins') { this.coinsEarned += 25; $('#run-coins').textContent = fmt(this.coinsEarned); this.floater('+25 🪙', 'big-f'); sfx.coin(); }
+      else if (it.pickup === 'time') { this.timeLeft += 5; this._hudTime(true); this.floater('+5s ⏱️', 'grow-f'); sfx.goal(); }
+      else if (it.pickup === 'gem') { this.gemsRun++; this.floater('+1 💎', 'boost-f'); sfx.win(); }
+      haptic('medium');
+      return;
+    }
     this.swallowed++;
     // growth by area
     this.area += it.r * it.r * GROW_K;

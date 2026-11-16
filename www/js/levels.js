@@ -2,33 +2,33 @@
 export const THEMES = [
   {
     id: 'beauty', floor: ['#ff9fcb', '#ffcfe5'], sky: '#ffc9e0', fog: '#ffd9ea',
-    small: [['lipstick', 0.8], ['nailpolish', 0.8], ['perfume', 0.75], ['mirror', 0.8]],
-    medium: [['gift_purple', 1.0], ['bag', 1.0], ['headphones', 1.0], ['camera', 1.0], ['donut', 0.95]],
-    large: [['teddy', 2.0], ['gift_yellow', 2.3], ['gift_red', 3.0], ['bag', 2.8]],
+    small: [['lipstick', 0.8], ['nailpolish', 0.8], ['perfume', 0.75], ['mirror', 0.8], ['ring', 0.8], ['sunglasses', 0.8]],
+    medium: [['gift_purple', 1.0], ['bag', 1.0], ['headphones', 1.0], ['camera', 1.0], ['donut', 0.95], ['heels', 1.0], ['brush', 1.0]],
+    large: [['teddy', 2.0], ['gift_yellow', 2.3], ['gift_red', 3.0], ['bag', 2.8], ['heels', 2.4]], decal: 'beauty', movers: [],
   },
   {
     id: 'sweets', floor: ['#ffd58a', '#ffecc2'], sky: '#ffe2b0', fog: '#ffeccb',
-    small: [['candy', 0.7], ['macaron', 0.75], ['donut', 0.8], ['apple', 0.8]],
-    medium: [['cupcake', 1.0], ['icecream', 1.0], ['lollipop', 1.0], ['donut', 1.3]],
-    large: [['cake', 1.6], ['cupcake', 2.6], ['icecream', 2.6], ['cake', 2.4]],
+    small: [['candy', 0.7], ['macaron', 0.75], ['donut', 0.8], ['apple', 0.8], ['chocobar', 0.8], ['popsicle', 0.75]],
+    medium: [['cupcake', 1.0], ['icecream', 1.0], ['lollipop', 1.0], ['donut', 1.3], ['milkshake', 1.0], ['pancakes', 1.0]],
+    large: [['cake', 1.6], ['cupcake', 2.6], ['icecream', 2.6], ['cake', 2.4], ['milkshake', 2.4], ['pancakes', 2.2]], decal: 'sweets', movers: ['donut'],
   },
   {
     id: 'toys', floor: ['#a6d3ff', '#d2e9ff'], sky: '#bfe0ff', fog: '#d5ebff',
-    small: [['blocks', 0.6], ['ball', 0.6], ['duck', 0.7], ['candy', 0.7]],
-    medium: [['teddy', 0.9], ['robot', 0.9], ['rocket', 0.9], ['toycar', 1.0], ['gift_purple', 1.0]],
-    large: [['teddy', 2.4], ['robot', 2.4], ['rocket', 2.6], ['ball', 3.2]],
+    small: [['blocks', 0.6], ['ball', 0.6], ['duck', 0.7], ['candy', 0.7], ['dice', 0.7], ['yoyo', 0.7]],
+    medium: [['teddy', 0.9], ['robot', 0.9], ['rocket', 0.9], ['toycar', 1.0], ['gift_purple', 1.0], ['train', 0.8]],
+    large: [['teddy', 2.4], ['robot', 2.4], ['rocket', 2.6], ['ball', 3.2], ['train', 2.0]], decal: 'toys', movers: ['toycar', 'duck', 'ball', 'train'],
   },
   {
     id: 'picnic', floor: ['#a6e68c', '#cdf4bb'], sky: '#c4ecff', fog: '#d9f4e6',
-    small: [['apple', 0.8], ['juice', 0.8], ['sandwich', 0.7], ['candy', 0.7]],
-    medium: [['watermelon', 1.0], ['cupcake', 1.0], ['basket', 0.8], ['ball', 1.0]],
-    large: [['basket', 2.0], ['watermelon', 2.6], ['tree', 1.8], ['bench', 1.8]],
+    small: [['apple', 0.8], ['juice', 0.8], ['sandwich', 0.7], ['candy', 0.7], ['hotdog', 0.75], ['frisbee', 0.8]],
+    medium: [['watermelon', 1.0], ['cupcake', 1.0], ['basket', 0.8], ['ball', 1.0], ['flowerpot', 1.0]],
+    large: [['basket', 2.0], ['watermelon', 2.6], ['tree', 1.8], ['bench', 1.8], ['parasol', 1.6]], decal: 'picnic', movers: ['ball', 'frisbee'],
   },
   {
     id: 'city', floor: ['#bfc3db', '#dcdeee'], sky: '#bcd6ff', fog: '#d6e2f7',
-    small: [['cone', 0.8], ['hydrant', 0.8], ['mailbox', 0.75], ['apple', 0.7]],
-    medium: [['bench', 0.9], ['lamp', 0.8], ['tree', 0.9], ['car', 0.85], ['taxi', 0.85]],
-    large: [['bus', 1.0], ['house', 1.2], ['car', 2.0], ['house', 1.7]],
+    small: [['cone', 0.8], ['hydrant', 0.8], ['mailbox', 0.75], ['apple', 0.7], ['trashbin', 0.8]],
+    medium: [['bench', 0.9], ['lamp', 0.8], ['tree', 0.9], ['car', 0.85], ['taxi', 0.85], ['trafficlight', 0.8], ['bike', 0.9]],
+    large: [['bus', 1.0], ['house', 1.2], ['car', 2.0], ['house', 1.7], ['trafficlight', 1.8]], decal: 'city', movers: ['car', 'taxi', 'bike', 'bus'],
   },
 ];
 
@@ -39,7 +39,7 @@ export const XMAS_THEME = {
   id: 'xmas', floor: ['#a9d3ff', '#e6f3ff'], sky: '#cfe6ff', fog: '#e6f2ff', snow: true,
   small: [['candycane', 0.8], ['ornament', 0.75], ['bell', 0.8], ['cookie', 0.8]],
   medium: [['santahat', 0.95], ['stocking', 1.0], ['gingerbread', 1.0], ['present_green', 1.0], ['present_white', 1.0]],
-  large: [['xtree', 1.5], ['snowman', 2.0], ['sled', 1.4], ['gingerhouse', 1.3]],
+  large: [['xtree', 1.5], ['snowman', 2.0], ['sled', 1.4], ['gingerhouse', 1.3]], decal: 'xmas', movers: ['present_green', 'present_white'],
 };
 
 function rng(seed) {
@@ -51,7 +51,7 @@ export function generateLevel(n, opts = {}) {
   const R = rng(n * 7919 + 13);
   const theme = (opts.xmas && n > 1 && n % 2 === 0) ? XMAS_THEME : THEMES[(n - 1) % THEMES.length];
   const d = Math.min(n, 30);
-  const W = 22 + d * 0.5;      // world half-extent x
+  const W = 20 + d * 0.45;     // world half-extent x
   const H = W * 1.45;          // world half-extent z
   const time = Math.min(150, 75 + d * 2.5);
 
@@ -63,7 +63,7 @@ export function generateLevel(n, opts = {}) {
   const pool = shuffled([...theme.small, ...theme.medium]);
   const goalTypes = [];
   for (const [name] of pool) { if (!goalTypes.includes(name)) goalTypes.push(name); if (goalTypes.length >= goalCount) break; }
-  const goals = goalTypes.map((name, i) => ({ name, need: Math.round(6 + d * 0.9 + (i === 0 ? 4 : 0) - i * 2), got: 0 }));
+  const goals = goalTypes.map((name, i) => ({ name, need: Math.round(8 + d * 1.1 + (i === 0 ? 4 : 0) - i * 2), got: 0 }));
   if (n >= 4) {
     const big = pick(theme.large);
     goals.push({ name: big[0], need: Math.min(4, 1 + Math.floor(d / 8)), got: 0, big: true, scale: big[1] });
@@ -115,18 +115,22 @@ export function populate(level, footOf) {
   }
 
   // 2) filler patterns: grids and rings of small items
-  const patterns = 10 + Math.floor(d * 0.6);
+  const patterns = 20 + Math.floor(d * 0.8);
   for (let p = 0; p < patterns; p++) {
     const [name, sc] = pick(R() < 0.6 ? theme.small : theme.medium);
     const cx = (R() * 2 - 1) * (W - 4), cz = (R() * 2 - 1) * (H - 4);
     const f = footOf(name) * sc;
     const gap = f * 2 + 0.25;
-    if (R() < 0.5) {
-      const cols = 2 + Math.floor(R() * 3), rows = 2 + Math.floor(R() * 3);
+    if (R() < 0.3) {
+      // a line / trail of items
+      const n = 6 + Math.floor(R() * 6), a = R() * Math.PI;
+      for (let i = 0; i < n; i++) place(name, sc, cx + Math.cos(a) * (i - n / 2) * gap, cz + Math.sin(a) * (i - n / 2) * gap, footOf(name));
+    } else if (R() < 0.55) {
+      const cols = 3 + Math.floor(R() * 3), rows = 3 + Math.floor(R() * 3);
       for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++)
         place(name, sc, cx + (i - cols / 2) * gap, cz + (j - rows / 2) * gap, footOf(name));
     } else {
-      const cnt = 6 + Math.floor(R() * 5), rad = gap * cnt / (Math.PI * 2);
+      const cnt = 8 + Math.floor(R() * 6), rad = gap * cnt / (Math.PI * 2);
       for (let i = 0; i < cnt; i++) { const a = i / cnt * Math.PI * 2; place(name, sc, cx + Math.cos(a) * rad, cz + Math.sin(a) * rad, footOf(name)); }
     }
   }
@@ -148,10 +152,21 @@ export function populate(level, footOf) {
     if (place(name, sc * (0.9 + R() * 0.2), (R() * 2 - 1) * (W - 3), (R() * 2 - 1) * (H - 3), footOf(name), true)) i++;
   }
   // 4) random scatter
-  const scatter = 60 + d * 3;
+  const scatter = 110 + d * 4;
   for (let i = 0, tries = 0; i < scatter && tries < 2000; tries++) {
     const [name, sc] = pick(R() < 0.7 ? theme.small : theme.medium);
     if (place(name, sc * (0.9 + R() * 0.2), (R() * 2 - 1) * (W - 1), (R() * 2 - 1) * (H - 1), footOf(name))) i++;
   }
+  // 5) floor pickups: coin piles, clocks (+time), a rare gem
+  const pk = [['coinpile', 'coins', 6 + Math.floor(d / 5)], ['clock', 'time', level.n >= 3 ? 2 : 0], ['gem', 'gem', level.n >= 3 && R() < 0.55 ? 1 : 0]];
+  for (const [name, kind, count] of pk) {
+    for (let i = 0, tries = 0; i < count && tries < 300; tries++) {
+      if (place(name, 1, (R() * 2 - 1) * (W - 2), (R() * 2 - 1) * (H - 2), footOf(name))) { level.items[level.items.length - 1].pickup = kind; i++; }
+    }
+  }
+  // 6) some items wander around
+  const movers = theme.movers || [];
+  let nm = 0; const maxMovers = 8 + Math.min(12, d);
+  level.items.forEach((it) => { if (nm < maxMovers && !it.hazard && !it.pickup && !it.big && movers.includes(it.name) && R() < 0.35) { it.mover = true; nm++; } });
   return level;
 }
