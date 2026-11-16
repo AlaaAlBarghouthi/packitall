@@ -6,7 +6,7 @@ import { sfx, haptic } from './audio.js';
 import { t, fmt, fmtTime } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
-const R0 = 0.9, GROW_K = 0.3, MAX_R = 6;
+const R0 = 0.9, GROW_K = 0.22, MAX_R = 6;
 const BOOST_TIME = { magnet: 6, tornado: 4, freeze: 10, grow: 8 };
 
 function checkerTexture(a, b) {
@@ -384,7 +384,7 @@ export class HoleGame {
         if (it.y < -it.h - 2.5) this._swallow(it);
         continue;
       }
-      const fits = it.r < R * 0.92;
+      const fits = it.r < R * 0.95; // must truly fit inside the circle
       // pulls
       if (fits && (magnet || (tornado && this._isGoal(it)))) {
         const dx = hx - it.x, dz = hz - it.z, d = Math.hypot(dx, dz);
@@ -401,7 +401,7 @@ export class HoleGame {
       const d = Math.hypot(dx, dz);
       if (d < R + it.r * 0.5) {
         if (fits) {
-          if (d < R - it.r * 0.35) { it.falling = true; it.vy = 0; it.y = 0; }
+          if (d < R - it.r * 0.75) { it.falling = true; it.vy = 0; it.y = 0; }
           else {
             // teetering on the edge: tilt towards the hole and slide in
             const k = 1 - (d - (R - it.r)) / (it.r * 1.5 + 0.001);

@@ -384,7 +384,9 @@ export function getModel(name) {
   if (!cache[name]) {
     const geo = MODELS[name]().build();
     const bb = geo.boundingBox;
-    const foot = Math.max(bb.max.x - bb.min.x, bb.max.z - bb.min.z) / 2;
+    // true footprint radius: farthest point from the centre (box corners count!)
+    const pa = geo.attributes.position.array; let foot = 0;
+    for (let i = 0; i < pa.length; i += 3) foot = Math.max(foot, Math.hypot(pa[i], pa[i + 2]));
     cache[name] = { geo, foot, height: bb.max.y };
   }
   return cache[name];
