@@ -11,6 +11,7 @@ import { BUILDINGS, BUILDING_ORDER, BOOSTERS, REFILL_GEMS, EXTRA_TIME_GEMS,
 import { THEMES } from './levels.js';
 import { sfx, haptic, unlockAudio } from './audio.js';
 import { HoleGame } from './game.js';
+import { modelIcon } from './models.js';
 import { CityScene, buildingIcon } from './city.js';
 import { xmasActive, xmasEndsAt } from './event.js';
 import { initAds, canShow, usesLeft, showRewarded, showPrivacyOptionsButton, openPrivacyOptions } from './ads.js';
@@ -316,6 +317,13 @@ function startLevel() {
   $('#game-hud').classList.remove('hidden');
   city.active = false;
   game.start(S.level, S.boosters, St.perks(), { tutorial: !S.tut.move && S.level === 1, xmas: xmasActive(), skin: S.skin });
+  if (game.level.hazards && !S.tut.bomb) {
+    game.paused = true; $('#intro').classList.remove('show');
+    const card = modal(`<div class="bomb-hint"><img src="${modelIcon('bomb')}"><span class="no-sign">⚠️</span></div>
+      <h2>${t('bombHintTitle')}</h2><p style="font-size:17px;font-weight:700;color:#3a1580">${t('bombHintText')}</p>
+      <div class="actions"><button class="btn btn-green btn-big" id="bh-ok">${t('gotIt')}</button></div>`, false);
+    card.querySelector('#bh-ok').onclick = () => { S.tut.bomb = true; St.save(); closeModal(true); game.paused = false; game._showIntro(); };
+  }
 }
 
 function backToMenu(toTab = 'play') {
@@ -411,6 +419,17 @@ function onEnd(res) {
       St.addCoins(total); sfx.coin(); ad2.outerHTML = `<div class="ad-done">✓ +${fmt(total)} 🪙</div>`;
       const tl = card.querySelector('.reward-lines .total b'); if (tl) { tl.innerHTML = fmt(total * 2) + '<i data-i="coin"></i>'; icons(card); }
     });
+  } else if (res.canExtend && res.reason === 'bomb') {
+    game.paused = true;
+    const card = modal(`<div class="big-ico" style="font-size:76px;line-height:90px">💥</div><h2>${t('boom')}</h2><p>${t('boomText')}</p>
+      <div class="actions">
+        ${adBtn('time', t('revive'), 'm-adrev')}
+        <button class="btn btn-pink" id="m-rev" ${S.gems >= EXTRA_TIME_GEMS ? '' : 'disabled'}><span style="direction:ltr;display:inline-flex;align-items:center;gap:4px"><i data-i="gem"></i>${EXTRA_TIME_GEMS}</span> ${t('revive')}</button>
+        <button class="btn btn-gray" id="m-give">${t('quit')} <small>(-1 ♥)</small></button></div>`, false);
+    const doRevive = () => { game.revive(); sfx.goal(); closeModal(true); };
+    card.querySelector('#m-rev').onclick = () => { if (St.spendGems(EXTRA_TIME_GEMS)) doRevive(); };
+    card.querySelector('#m-give').onclick = () => { closeModal(true); onEnd({ ...res, canExtend: false }); };
+    const ar = card.querySelector('#m-adrev'); if (ar) ar.onclick = () => watchAd('time', ar, doRevive);
   } else if (res.canExtend) {
     sfx.lose();
     game.paused = true;
@@ -431,7 +450,7 @@ function onEnd(res) {
     sfx.lose();
     St.loseHeart();
     const cr = commitRun(false), coins = cr.coins;
-    const card = modal(`<div class="big-ico"><i data-i="heart"></i></div><h2>${t('lose')}</h2>
+    const card = modal(`<div class="big-ico"><i data-i="heart"></i></div><h2>${res.reason === 'bomb' ? t('boom') : t('lose')}</h2>
       <p>-1 ♥ · ${t('earned')} <b style="direction:ltr;display:inline-block">${fmt(coins)}</b> 🪙</p>
       <div class="mrow" style="justify-content:center">${gainChips(cr.mats)}</div>
       <div class="actions h">

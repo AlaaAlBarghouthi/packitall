@@ -27,6 +27,15 @@ function tone(freq, dur, { type = 'sine', vol = 0.3, slide = 0, delay = 0, attac
 }
 
 export const sfx = {
+  boom() {
+    const c = ac(); if (!c || !S.settings.sound) return;
+    const t0 = c.currentTime, n = c.sampleRate * 0.9, buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.5);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(1800, t0); lp.frequency.exponentialRampToValueAtTime(120, t0 + 0.8);
+    const g = c.createGain(); g.gain.value = 0.9; src.connect(lp); lp.connect(g); g.connect(master); src.start(t0);
+    tone(90, 0.6, { type: 'sine', vol: 0.6, slide: 0.35 });
+  },
   pop(combo = 0) {
     const f = 380 * Math.pow(1.06, Math.min(combo, 24));
     tone(f, 0.12, { type: 'triangle', vol: 0.25, slide: 2.2 });

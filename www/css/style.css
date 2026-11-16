@@ -269,3 +269,11 @@ body.xmas #nav button::before, body.xmas .btn-big::before, body.xmas .round-btn:
 body.xmas .btn-big, body.xmas .round-btn { position: relative; }
 body.xmas .round-btn::before { top: -5px; left: 18%; right: 18%; height: 9px; }
 .skin-ico { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #3a1580; }
+
+/* ---------- bombs */
+#boom { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 55%, rgba(255,255,220,.95), rgba(255,140,40,.7) 30%, rgba(200,20,20,.35) 60%, transparent 80%); }
+#boom.go { animation: boomFlash .7s ease-out; }
+@keyframes boomFlash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+.bomb-hint { position: relative; width: 130px; height: 130px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle, #ffe6e9 55%, #ff4e5e 57%, #ff4e5e 63%, transparent 64%); display: grid; place-items: center; animation: pulse .8s infinite; }
+.bomb-hint img { width: 96px; height: 96px; }
+.bomb-hint .no-sign { position: absolute; bottom: -2px; right: 0; font-size: 40px; }

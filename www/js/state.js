@@ -24,7 +24,7 @@ function fresh() {
     skin: 'classic', skins: ['classic'], xmasGift: '',
     login: { last: '', streak: 0 },
     toyDay: '',
-    tut: { move: false, city: false },
+    tut: { move: false, city: false, bomb: false },
   };
 }
 

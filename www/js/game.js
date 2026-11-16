@@ -175,9 +175,18 @@ export class HoleGame {
       mesh.castShadow = true; mesh.receiveShadow = false;
       this.scene.add(mesh);
       return { mesh, name: it.name, scale: it.scale, r: m.foot * it.scale, h: m.height * it.scale,
-        big: !!it.big, x: it.x, z: it.z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: (Math.random() - 0.5) * 8 };
+        big: !!it.big, hazard: !!it.hazard, x: it.x, z: it.z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: (Math.random() - 0.5) * 8 };
     });
 
+    // pulsing red danger ring under every bomb
+    this.hazRings = [];
+    const ringGeo = new THREE.RingGeometry(1.0, 1.5, 32);
+    this.items.forEach((it) => {
+      if (!it.hazard) return;
+      const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xff2a3a, transparent: true, opacity: 0.6, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2; m.position.set(it.x, 0.03, it.z); m.scale.setScalar(it.r); this.scene.add(m); it.ring = m; this.hazRings.push(m);
+    });
+    this.invuln = 0;
     this.goals = lvl.goals.map(g => ({ ...g, got: 0 }));
     this._buildHud();
     this._updateHole(true);
@@ -258,8 +267,9 @@ export class HoleGame {
   }
   _perkChips() {
     const P = this.perks || {}, out = [];
+    if (this.level && this.level.hazards) out.push(`⚠️ 💣 ×${this.level.hazards}`);
     if (P.timeS) out.push(`⏱️ +${P.timeS}s`); if (P.sizePct) out.push(`🕳️ +${P.sizePct}%`); if (P.coinPct) out.push(`🪙 +${P.coinPct}%`);
-    return out.length ? `<div class="mrow" style="justify-content:center;margin:2px 0 4px">${out.map((x) => `<span class="mchip ok">${x}</span>`).join('')}</div>` : '';
+    return out.length ? `<div class="mrow" style="justify-content:center;margin:2px 0 4px">${out.map((x) => `<span class="mchip ${x.startsWith('⚠️') ? 'no' : 'ok'}">${x}</span>`).join('')}</div>` : '';
   }
   _tutorial(dt) {
     const el = $('#tut'); if (!el) return;
@@ -352,6 +362,7 @@ export class HoleGame {
       f.el.style.opacity = op; f.el.style.transform = `translate(-50%, ${y}px) scale(${sc})`;
       return true;
     });
+    this._hazardFx(dt);
     if (this.paused || this.ended) { this._camera(dt, true); return; }
     this.elapsed += dt;
 
@@ -387,6 +398,7 @@ export class HoleGame {
     this._updateHole();
     this._items(dt, R);
     this._snow(dt);
+    if (this.invuln > 0) this.invuln -= dt;
 
     if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) this.combo = 0; }
     if (this.tooBigCooldown > 0) this.tooBigCooldown -= dt;
@@ -435,9 +447,9 @@ export class HoleGame {
         if (it.y < -it.h - 2.5) this._swallow(it);
         continue;
       }
-      const fits = it.r < R * 0.95; // must truly fit inside the circle
+      const fits = it.r < R * 0.95 && !(it.hazard && this.invuln > 0); // must truly fit inside the circle
       // pulls
-      if (fits && (magnet || (tornado && this._isGoal(it)))) {
+      if (fits && !it.hazard && (magnet || (tornado && this._isGoal(it)))) {
         const dx = hx - it.x, dz = hz - it.z, d = Math.hypot(dx, dz);
         const range = tornado ? 999 : R + 6;
         if (d < range && d > 0.01) {
@@ -471,6 +483,17 @@ export class HoleGame {
     }
   }
 
+  _hazardFx(dt) {
+    const t = performance.now() * 0.006;
+    if (this.hazRings) this.hazRings.forEach((m, i) => { m.material.opacity = 0.45 + 0.45 * (0.5 + 0.5 * Math.sin(t + i)); });
+    if (this.fx) this.fx = this.fx.filter((p) => {
+      p.userData.life -= dt; const a = p.geometry.attributes.position, v = p.userData.vel;
+      for (let k = 0; k < a.count; k++) { v[k * 3 + 1] -= 18 * dt; a.setXYZ(k, a.getX(k) + v[k * 3] * dt, a.getY(k) + v[k * 3 + 1] * dt, a.getZ(k) + v[k * 3 + 2] * dt); }
+      a.needsUpdate = true; p.material.opacity = Math.max(0, p.userData.life);
+      if (p.userData.life <= 0) { this.scene.remove(p); p.geometry.dispose(); p.material.dispose(); return false; }
+      return true;
+    });
+  }
   _snow(dt) {
     if (!this.snow) return;
     const a = this.snow.geometry.attributes.position, p = a.array, cx = this.hole.x, cz = this.hole.z;
@@ -493,6 +516,8 @@ export class HoleGame {
   _swallow(it) {
     it.alive = false; it.mesh.visible = false;
     this.scene.remove(it.mesh);
+    if (it.ring) { this.scene.remove(it.ring); it.ring = null; }
+    if (it.hazard) return this._explode(it);
     this.swallowed++;
     // growth by area
     this.area += it.r * it.r * GROW_K;
@@ -523,7 +548,24 @@ export class HoleGame {
     }
   }
 
-  _end(win) {
+  _explode(it) {
+    sfx.boom(); haptic('heavy');
+    this.shake = 0.6;
+    const el = $('#boom'); if (el) { el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
+    // fiery particles
+    const N = 90, pos = new Float32Array(N * 3), col = new Float32Array(N * 3), vel = [];
+    const pal = [[1, .85, .2], [1, .45, .1], [1, .2, .15], [.35, .32, .4]];
+    for (let i = 0; i < N; i++) { pos.set([this.hole.x, 0.5, this.hole.z], i * 3); col.set(pal[i % 4], i * 3); const a = Math.random() * 6.28, sp = 4 + Math.random() * 9; vel.push(Math.cos(a) * sp, 6 + Math.random() * 10, Math.sin(a) * sp); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const p = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.5, vertexColors: true, transparent: true }));
+    p.userData = { vel, life: 1.3 }; this.scene.add(p); (this.fx = this.fx || []).push(p);
+    this.floater('💥', 'big-f');
+    this._end(false, 'bomb');
+  }
+  revive() {
+    this.ended = false; this.paused = false; this.invuln = 3; this.extraUsed = true;
+  }
+  _end(win, reason) {
     if (this.ended) return;
     this.ended = true; this.input.active = false; $('#joy').classList.remove('show');
     const pctLeft = this.timeLeft / this.level.time;
@@ -532,8 +574,8 @@ export class HoleGame {
     const winBonus = win ? 40 + this.level.n * 8 : 0;
     setTimeout(() => this.events.onEnd({
       win, stars, level: this.level.n, coins: this.coinsEarned, timeBonus, winBonus,
-      swallowed: this.swallowed, canExtend: !win && !this.extraUsed,
-    }), win ? 700 : 300);
+      swallowed: this.swallowed, canExtend: !win && !this.extraUsed, reason: reason || (win ? 'win' : 'time'),
+    }), win ? 700 : reason === 'bomb' ? 1100 : 300);
   }
   markExtended() { this.extraUsed = true; }
 
@@ -545,6 +587,7 @@ export class HoleGame {
     const target = new THREE.Vector3(this.hole.x, height, this.hole.z + back);
     if (!this._camInit) { this.camera.position.copy(target); this._camInit = true; }
     this.camera.position.lerp(target, Math.min(1, dt * 5));
+    if (this.shake > 0) { this.shake -= dt; const k = this.shake * 0.9; this.camera.position.x += (Math.random() - 0.5) * k; this.camera.position.y += (Math.random() - 0.5) * k; }
     this.camera.lookAt(this.hole.x, 0, this.hole.z - 1.5);
   }
 

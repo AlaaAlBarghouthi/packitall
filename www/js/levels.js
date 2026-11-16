@@ -32,6 +32,8 @@ export const THEMES = [
   },
 ];
 
+export const HAZARD_LEVEL = 5;
+
 // Holiday season world (used for every 2nd level while the event is on)
 export const XMAS_THEME = {
   id: 'xmas', floor: ['#a9d3ff', '#e6f3ff'], sky: '#cfe6ff', fog: '#e6f2ff', snow: true,
@@ -126,6 +128,17 @@ export function populate(level, footOf) {
     } else {
       const cnt = 6 + Math.floor(R() * 5), rad = gap * cnt / (Math.PI * 2);
       for (let i = 0; i < cnt; i++) { const a = i / cnt * Math.PI * 2; place(name, sc, cx + Math.cos(a) * rad, cz + Math.sin(a) * rad, footOf(name)); }
+    }
+  }
+  // 2b) hazards: bombs from level 5 (more every 3 levels)
+  level.hazards = 0;
+  if (level.n >= HAZARD_LEVEL) {
+    const want = Math.min(10, 3 + Math.floor((level.n - HAZARD_LEVEL) / 4));
+    for (let i = 0, tries = 0; i < want && tries < 600; tries++) {
+      const sc = [1.2, 1.5, 1.8, 2.2][i % 4];
+      const x = (R() * 2 - 1) * (W - 3), z = (R() * 2 - 1) * (H - 3);
+      if (Math.hypot(x, z - H * 0.75) < 7) continue;            // never near the start
+      if (place('bomb', sc, x, z, footOf('bomb'))) { level.items[level.items.length - 1].hazard = true; level.hazards++; i++; }
     }
   }
   // 3) large landmarks
