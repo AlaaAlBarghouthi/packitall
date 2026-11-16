@@ -4,6 +4,6 @@
     <string name="title_activity_main">Pack It All</string>
     <string name="package_name">com.packitall.game</string>
     <string name="custom_url_scheme">com.packitall.game</string>
-    <!-- AdMob APPLICATION id (test id below). Replace with yours from AdMob > Apps > App settings -->
-    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <!-- AdMob APPLICATION id (Pack It All, Android) -->
+    <string name="admob_app_id">ca-app-pub-2805078999939081~9631773890</string>
 </resources>

@@ -1,7 +1,8 @@
 // ============================================================
 //  AD SETTINGS — put your real AdMob IDs here before publishing
 // ============================================================
-// While TEST is true the app shows Google's TEST ads (safe to click, no money).
+// While TEST is true the app shows Google's TEST ads (safe to click, no money),
+// even though the real IDs are filled in. Set TEST to false only for the store release.
 // After you create your app + a "Rewarded" ad unit in AdMob:
 //   1) paste the two ad unit IDs below
 //   2) set TEST to false
@@ -11,7 +12,7 @@
 export const AD = {
   TEST: true,
   android: {
-    rewarded: 'ca-app-pub-3940256099942544/5224354917', // Google test rewarded unit
+    rewarded: 'ca-app-pub-2805078999939081/8922482405', // Pack It All · Reward (real)
   },
   ios: {
     rewarded: 'ca-app-pub-3940256099942544/1712485313', // Google test rewarded unit
