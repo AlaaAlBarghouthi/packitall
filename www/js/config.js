@@ -17,6 +17,9 @@ export const AD = {
   ios: {
     rewarded: 'ca-app-pub-2805078999939081/8021123416', // Pack It All · Reward (real)
   },
+  // Highest ad content rating allowed (must match AdMob > Blocking controls > Ad content rating)
+  // 'General' | 'ParentalGuidance' | 'Teen' | 'MatureAudience'
+  MAX_RATING: 'Teen',
   // How many times per day each reward button can be used
   DAILY_CAP: 5,
   // In the web version there are no real ads: show a short demo instead

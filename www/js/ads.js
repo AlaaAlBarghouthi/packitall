@@ -20,7 +20,7 @@ export async function initAds() {
     if (ci.canRequestAds === false) return;
     if (platform === 'ios') { try { await M.requestTrackingAuthorization(); } catch (e) {} }
     await M.initialize({
-      maxAdContentRating: 'General',          // family-friendly ads only
+      maxAdContentRating: AD.MAX_RATING || 'General', // never mature (MA) ads
       tagForChildDirectedTreatment: false,
       tagForUnderAgeOfConsent: false,
       initializeForTesting: AD.TEST,

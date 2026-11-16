@@ -19,7 +19,7 @@ To show these ads the game uses **Google AdMob**. AdMob may collect and process:
 - approximate location derived from the IP address,
 - basic device and app information and ad interaction data (for example, whether an ad was shown or completed).
 
-This data is used to deliver ads, measure them, prevent fraud and, where you have agreed, personalise them. Ads are limited to content suitable for general audiences.
+This data is used to deliver ads, measure them, prevent fraud and, where you have agreed, personalise them. Ads are limited to content rated for teens and younger (no mature-audience ads such as alcohol or sexual content).
 
 - **Europe / UK:** you are asked for consent before personalised ads, and can change your choice any time from **Settings → Privacy options** in the game.
 - **iPhone:** iOS asks you whether to allow tracking. If you say no, you can still watch ads; they will just be less personalised.
@@ -44,7 +44,7 @@ Contact: _[your email here]_
 - تقدّمك محفوظ على جهازك بس.
 - **الإعلانات اختيارية:** ما بيطلع إعلان إلا إذا إنت كبست زر "احضر إعلان" لتاخد مكافأة.
 - لعرض الإعلانات منستعمل **Google AdMob**، وهو ممكن يستعمل معرّف الإعلانات بجهازك، وموقع تقريبي من عنوان الإنترنت، ومعلومات عامة عن الجهاز، حتى يعرض الإعلانات ويقيسها ويمنع الاحتيال.
-- الإعلانات مفلترة لمحتوى مناسب لكل الأعمار.
+- الإعلانات مفلترة لمحتوى مناسب للمراهقين وأصغر، يعني ما في إعلانات للكبار متل الكحول أو المحتوى الجنسي.
 - بأوروبا بنطلب موافقتك، وبتقدر تغيّرها من **الإعدادات ← خيارات الخصوصية** باللعبة. وبالآيفون النظام بيسألك إذا بتسمح بالتتبّع.
 
 للتواصل: _[إيميلك هون]_
