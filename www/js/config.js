@@ -15,7 +15,7 @@ export const AD = {
     rewarded: 'ca-app-pub-2805078999939081/8922482405', // Pack It All · Reward (real)
   },
   ios: {
-    rewarded: 'ca-app-pub-3940256099942544/1712485313', // Google test rewarded unit
+    rewarded: 'ca-app-pub-2805078999939081/8021123416', // Pack It All · Reward (real)
   },
   // How many times per day each reward button can be used
   DAILY_CAP: 5,

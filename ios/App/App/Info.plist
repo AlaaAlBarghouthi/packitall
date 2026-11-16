@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-2805078999939081~2030430134</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>This lets us show ads that are more relevant to you. The game works the same either way.</string>
 	<key>SKAdNetworkItems</key>
