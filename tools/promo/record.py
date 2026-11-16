@@ -62,7 +62,7 @@ async def main():
 
         if MODE in ('preview', 'game'):
             await pg.evaluate("""() => { const r = window.__rec; r.startLevel(); const g = r.game; g.introT = 0; document.querySelector('#intro').classList.remove('show');
-              const orig = g._swallow.bind(g); g._end = () => {}; g._swallow = (it) => { orig(it); g.area += it.r * it.r * 0.1; g.holeR = Math.min(6, Math.sqrt(g.area)); };
+              const orig = g._swallow.bind(g); g._end = () => {}; g._swallow = (it) => { orig(it); g.area += it.r * it.r * 0.05; g.holeR = Math.min(6, Math.sqrt(g.area)); };
               window.__lastSw = 0; }""")
             caps = [(0, 80, 'قدّيش بتقدر <span class="y">تبلع</span>؟ 🕳️'), (150, 245, 'كل ما تبلع...<br><span class="y">بتكبر!</span> 😳'),
                     (335, 420, '<span class="y">ابلع</span> كل شي! 🔥')]
