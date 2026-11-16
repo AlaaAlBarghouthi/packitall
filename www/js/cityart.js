@@ -429,6 +429,17 @@ B.bakery = (lv) => shopBuilding({
   extra: (k, w, d) => { k.rbox(0.9, 0.5, 0.5, 0.06, '#c98a4f', 'wood', [1.3, 0.25, d / 2 + 0.8]); for (let i = 0; i < 3; i++) k.sph(0.13, '#e7a457', 'base', [1.05 + i * 0.25, 0.58, d / 2 + 0.8], [1.4, 0.8, 1], 8); },
 }, lv);
 
+B.pizzeria = (lv) => shopBuilding({
+  wall: '#fff3e0', groundColor: P.brickSand, roof: 'flat', roofColor: '#2f8a3e', aw1: '#e8323e', aw2: '#2f9a44', sign: '#e8323e', trim: '#ffffff', shutter: '#2f9a44', flowers: true,
+  prop: (k, y) => { // giant pizza tilted on the roof
+    k.cyl(0.95, 0.95, 0.14, '#e6a14d', 'base', [0, y + 0.95, -0.1], [Math.PI / 2 - 0.25, 0, 0], 24);
+    k.cyl(0.82, 0.82, 0.15, '#ffd76a', 'base', [0, y + 0.95, -0.06], [Math.PI / 2 - 0.25, 0, 0], 24);
+    for (const [x, yy] of [[0.35, 0.3], [-0.3, 0.2], [0.05, -0.35], [-0.4, -0.25], [0.45, -0.2], [0, 0.05]]) k.cyl(0.13, 0.13, 0.06, '#d8323c', 'base', [x, y + 0.95 + yy * 0.97, 0.06 - yy * 0.25], [Math.PI / 2 - 0.25, 0, 0], 12);
+    k.box(0.12, 0.8, 0.12, '#7a4a2a', 'wood', [0, y + 0.3, -0.35]);
+  },
+  extra: (k, w, d) => { umbrellaTable(k, -1.3, d / 2 + 1.0, '#e8323e'); umbrellaTable(k, 1.25, d / 2 + 1.0, '#2f9a44'); },
+}, lv);
+
 B.boutique = (lv) => shopBuilding({
   wall: '#ffffff', groundColor: '#e6ecff', groundMat: 'wall', roof: 'hip', roofColor: P.navy, aw1: P.navy, aw2: P.white, sign: P.gold, signInner: P.navy, trim: '#ffffff', shutter: P.navy, flowers: true,
   prop: (k, y) => { k.rbox(0.8, 0.9, 0.35, 0.08, P.yellow, 'base', [0, y + 0.95, 0]); k.tor(0.22, 0.05, P.navy, 'base', [0, y + 1.4, 0], [0, 0, 0], Math.PI); },

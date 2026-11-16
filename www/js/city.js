@@ -3,6 +3,8 @@ import * as THREE from './lib/three.module.min.js';
 import { getModel, itemMaterial, geoIcon } from './models.js';
 import { GRID, PLOT_UNLOCK } from './data.js';
 import { S, plotUnlocked, pendingIncome } from './state.js';
+import { isOrderShop, canDeliver } from './orders.js';
+import { shopLv } from './state.js';
 import { ensureArt, TEX, K, buildingMesh, buildingParts, gardenFor, tree, bush, lamp, bench } from './cityart.js';
 import { xmasActive } from './event.js';
 
@@ -46,6 +48,21 @@ const coinSprite = () => textSprite((g) => {
   g.strokeStyle = '#d98c0a'; g.lineWidth = 5; g.beginPath(); g.arc(64, 58, 29, 0, 7); g.stroke();
   g.fillStyle = '#d98c0a'; g.font = 'bold 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', 64, 60);
 }, 1.35);
+const orderSprite = () => textSprite((g) => {
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(64, 58, 54, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(48, 104); g.lineTo(80, 104); g.lineTo(64, 124); g.fill();
+  g.fillStyle = '#4cc86a'; g.beginPath(); g.arc(64, 58, 44, 0, 7); g.fill();
+  g.fillStyle = '#fff'; g.beginPath(); g.roundRect(42, 32, 44, 54, 6); g.fill();
+  g.fillStyle = '#c98a4f'; g.beginPath(); g.roundRect(52, 26, 24, 12, 4); g.fill();
+  g.strokeStyle = '#4cc86a'; g.lineWidth = 8; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(51, 60); g.lineTo(61, 70); g.lineTo(78, 50); g.stroke();
+}, 1.45);
+const starSprite = (n) => textSprite((g) => {
+  const st = (r1, r2) => { g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? r2 : r1; g.lineTo(64 + Math.cos(a) * r, 66 + Math.sin(a) * r); } g.closePath(); };
+  g.fillStyle = 'rgba(0,0,0,.2)'; g.save(); g.translate(0, 5); st(60, 28); g.fill(); g.restore();
+  g.fillStyle = '#fff'; st(62, 30); g.fill(); g.fillStyle = '#ffc61a'; st(52, 24); g.fill();
+  g.fillStyle = '#8a4a00'; g.font = 'bold 44px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(n), 64, 72);
+}, 1.25);
 
 function skyTexture() {
   const c = document.createElement('canvas'); c.width = 4; c.height = 256;
@@ -246,10 +263,10 @@ export class CityScene {
     this.slots.forEach((sl, i) => {
       const p = S.plots[i];
       const unlocked = plotUnlocked(i);
-      const key = (unlocked ? 'u' : 'l') + (p.b || '') + p.lv;
+      const key = (unlocked ? 'u' : 'l') + (p.b || '') + p.lv + (p.b ? '_' + shopLv(p.b) : '');
       if (key === sl.key) return;
       sl.key = key;
-      for (const k of ['building', 'garden', 'blob', 'marker', 'sign']) if (sl[k]) { sl.g.remove(sl[k]); sl[k] = null; }
+      for (const k of ['building', 'garden', 'blob', 'marker', 'sign', 'flag']) if (sl[k]) { sl.g.remove(sl[k]); sl[k] = null; }
       const mat = sl.pad.material;
       if (!unlocked) { mat.map = null; mat.color.set('#c6c4cf'); }
       else { mat.map = TEX.grass; mat.color.set(this.xmas ? (p.b ? '#e9f3ff' : '#f4f9ff') : (p.b ? '#c4eda6' : '#d4f2b8')); }
@@ -272,6 +289,8 @@ export class CityScene {
         sl.blob = blobMesh([[0, m.position.z, 2.6, 2.4]]); sl.blob.position.y = 0.04; sl.g.add(sl.blob);
         m.scale.setScalar(0.01); m.userData.grow = 0;
         sl.top = buildingParts(p.b, p.lv).geo.boundingBox.max.y;
+        const sv = shopLv(p.b);
+        if (isOrderShop(p.b) && sv > 1) { sl.flag = starSprite(sv); sl.flag.position.set(2.1, 0.9, 2.1); sl.g.add(sl.flag); }
       }
     });
   }
@@ -324,6 +343,9 @@ export class CityScene {
     const r = this.renderer.domElement.getBoundingClientRect();
     const v = new THREE.Vector2(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
     this.ray.setFromCamera(v, this.camera);
+    const ords = this.slots.map(s => s.order).filter(Boolean);
+    let oh = this.ray.intersectObjects(ords, false)[0];
+    if (oh && this.events.onOrderTap) { this.events.onOrderTap(oh.object.userData.plot); return; }
     const coins = this.slots.map(s => s.coin).filter(Boolean);
     let hit = this.ray.intersectObjects(coins, false)[0];
     if (hit) { this.events.onCoinTap(hit.object.userData.plot); return; }
@@ -364,6 +386,12 @@ export class CityScene {
       if (has && !sl.coin) { sl.coin = coinSprite(); sl.coin.userData.plot = i; sl.g.add(sl.coin); }
       if (!has && sl.coin) { sl.g.remove(sl.coin); sl.coin = null; }
       if (sl.coin) sl.coin.position.y = Math.max(2.8, (sl.top || 2) + 1.1) + Math.sin(this.time * 3 + i) * 0.2;
+      const p = S.plots[i];
+      const ord = p.b && isOrderShop(p.b) && S.orders && S.orders[p.b] && canDeliver(S.orders[p.b]);
+      if (ord && !sl.order) { sl.order = orderSprite(); sl.order.userData.plot = i; sl.g.add(sl.order); }
+      if (!ord && sl.order) { sl.g.remove(sl.order); sl.order = null; }
+      if (sl.order) { sl.order.position.set(sl.coin ? 1.1 : 0, Math.max(2.8, (sl.top || 2) + 1.1) + Math.sin(this.time * 3 + i + 1.5) * 0.2, 0); if (sl.coin) sl.coin.position.x = -1.1; }
+      else if (sl.coin) sl.coin.position.x = 0;
       if (sl.marker) sl.marker.position.y = 1.35 + Math.sin(this.time * 2 + i) * 0.12;
       const b = sl.building;
       if (b && b.userData.grow !== undefined) {

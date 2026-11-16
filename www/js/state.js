@@ -26,6 +26,7 @@ function fresh() {
     login: { last: '', streak: 0 },
     toyDay: '',
     tut: { move: false, city: false, bomb: false },
+    pantry: {}, orders: {}, shops: {},
   };
 }
 
@@ -49,6 +50,7 @@ export async function load() {
       S.login = Object.assign(fresh().login, d.login || {});
       S.tut = Object.assign(fresh().tut, d.tut || {});
       if (!Array.isArray(S.skins)) S.skins = ['classic'];
+      S.pantry = S.pantry || {}; S.orders = S.orders || {}; S.shops = S.shops || {};
       S.pre = Object.assign(fresh().pre, d.pre || {}); S.streak = S.streak || 0;
       while (S.plots.length < PLOT_UNLOCK.length) S.plots.push({ b: null, lv: 0, ts: 0 });
     } catch (e) { S = fresh(); }
@@ -148,7 +150,7 @@ export function pendingIncome(i) {
   const p = S.plots[i];
   if (!p.b) return 0;
   const hrs = Math.min(INCOME_CAP_HOURS + perks().capH, (Date.now() - p.ts) / 3600000);
-  return Math.floor(incomeOf(p.b, p.lv) * hrs);
+  return Math.floor(plotIncome(p) * hrs);
 }
 export function collectPlot(i) {
   const n = pendingIncome(i);
@@ -163,7 +165,7 @@ export function collectAll() {
   return total;
 }
 export function totalIncome() {
-  return S.plots.reduce((a, p) => a + (p.b ? incomeOf(p.b, p.lv) : 0), 0);
+  return S.plots.reduce((a, p) => a + (p.b ? plotIncome(p) : 0), 0);
 }
 export function population() {
   return S.plots.reduce((a, p) => a + (p.b ? BUILDINGS[p.b].pop * p.lv : 0), 0);
@@ -235,3 +237,7 @@ export function claimLogin() {
   S.login = { last: today(), streak: idx + 1 };
   save(); return r;
 }
+
+// shop level from orders boosts that building's income (+15% per level)
+export function shopLv(type) { return (S.shops && S.shops[type] && S.shops[type].lv) || 1; }
+export function plotIncome(p) { return Math.round(incomeOf(p.b, p.lv) * (1 + 0.15 * (shopLv(p.b) - 1))); }

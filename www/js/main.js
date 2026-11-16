@@ -14,6 +14,7 @@ import { HoleGame } from './game.js';
 import { modelIcon } from './models.js';
 import { CityScene, buildingIcon } from './city.js';
 import { xmasActive, xmasEndsAt } from './event.js';
+import * as Ord from './orders.js';
 import { initAds, canShow, usesLeft, showRewarded, showPrivacyOptionsButton, openPrivacyOptions } from './ads.js';
 
 // "Watch an ad" button (only rendered when an ad can be shown)
@@ -70,7 +71,7 @@ function toast(msg) {
 }
 let modalOnClose = null;
 function modal(html, onClose) {
-  $('#modal-card').innerHTML = html; icons($('#modal-card'));
+  $('#modal-card').classList.remove('wide'); $('#modal-card').innerHTML = html; icons($('#modal-card'));
   $('#modal').classList.remove('hidden'); modalOnClose = onClose === undefined ? null : onClose;
   return $('#modal-card');
 }
@@ -139,6 +140,10 @@ function renderCityHud() {
   btn.innerHTML = `<i data-i="coin"></i> ${t('collect')} ${pending > 0 ? fmt(pending) : ''}`; icons(btn);
   btn.disabled = pending <= 0;
   $('#city-mats').innerHTML = visMats().map((m) => `<span class="mchip">${MATS[m].icon} ${fmt(S.mats[m] || 0)}</span>`).join('');
+  const ob = $('#btn-orders'), shops = Ord.activeOrders();
+  ob.classList.toggle('hidden', !shops.length);
+  const rc = shops.filter(([, o]) => Ord.canDeliver(o)).length;
+  ob.innerHTML = `📋 ${t('orders')}${rc ? ` <span class="badge">${rc}</span>` : ''}`;
   $('#city-hint').classList.toggle('hidden', !!(S.tut.city || S.plots.some((p) => p.b)));
 }
 function openBonuses() {
@@ -262,6 +267,76 @@ function renderShop() {
 }
 
 // ---------------------------------------------------------------- city interactions
+// ---------------------------------------------------------------- orders
+const worldName = (n) => { const w = Ord.itemWorld(n); return w ? t('theme_' + w) : ''; };
+function shopStars(type) {
+  const sh = Ord.shopInfo(type);
+  const need = sh.lv >= Ord.SHOP_MAX ? 0 : Ord.STARS_TO_NEXT[sh.lv];
+  return `<div class="shop-lv"><b>${t('shopLv')} ${sh.lv}/${Ord.SHOP_MAX}</b>${need ? `<span class="shop-bar"><i style="width:${Math.round(sh.xp / need * 100)}%"></i></span><small>⭐ ${sh.xp}/${need}</small>` : `<small>👑 ${t('maxed')}</small>`}</div>`;
+}
+function shopLine(type) {
+  Ord.activeOrders();
+  const o = S.orders[type];
+  return `<div class="perk-box">${shopStars(type)}<small>${t('shopBoost', { n: (Ord.shopInfo(type).lv - 1) * 15 })}</small>
+    <button class="btn btn-pink" id="m-shoporder" style="margin-top:6px">📋 ${t('orders')}${o && Ord.canDeliver(o) ? ' ✓' : ''}</button></div>`;
+}
+function orderGainLine(useful) {
+  if (!useful || !useful.length) return '';
+  return `<div class="order-gain"><small>📋 ${t('forOrders')}</small><div>${useful.map(([n, c]) => `<span class="oitem sm"><img src="${modelIcon(n)}"><b>+${c}</b></span>`).join('')}</div></div>`;
+}
+function orderCard(type, o) {
+  const wait = Ord.isWaiting(o), ok = Ord.canDeliver(o);
+  const items = o.items.map(([n, c]) => {
+    const have = Math.min(c, S.pantry[n] || 0), done = have >= c;
+    return `<div class="oitem ${done ? 'done' : ''}"><img src="${modelIcon(n)}"><b>${have}/${c}</b><small>${worldName(n)}</small></div>`;
+  }).join('');
+  return `<div class="order-card ${ok ? 'ready' : ''}" data-shop="${type}">
+    <div class="order-head"><img src="${buildingIcon(type, 1)}"><div><b>${t('bld_' + type)}</b>${shopStars(type)}</div></div>
+    ${wait ? `<div class="order-wait">⏳ ${t('newOrderIn')} <b class="o-timer" data-ready="${o.ready}">${fmtDuration(o.ready - Date.now())}</b>${adBtn('order', t('orderNow'), 'o-ad-' + type)}</div>`
+      : `<div class="order-items">${items}</div>
+         <div class="order-foot"><span class="order-reward"><i data-i="coin"></i>${fmt(o.coins)} · ⭐1</span>
+           <button class="btn ${ok ? 'btn-green' : 'btn-gray'} o-deliver" ${ok ? '' : 'disabled'}>${t('deliver')}</button>
+           <button class="btn btn-gray o-swap" title="${t('swap')}">🔄</button></div>`}
+  </div>`;
+}
+let ordTimer = null;
+function openOrders(focus) {
+  const list = Ord.activeOrders();
+  if (!list.length) { toast(t('noOrderShops')); return; }
+  if (focus) list.sort((a, b) => (a[0] === focus ? -1 : b[0] === focus ? 1 : 0));
+  const card = modal(`<h2>📋 ${t('orders')}</h2><p class="sub">${t('ordersHelp')}</p>
+    <div class="orders-list">${list.map(([ty, o]) => orderCard(ty, o)).join('')}</div>
+    <div class="actions"><button class="btn btn-gray" id="m-close">${t('close')}</button></div>`, () => clearInterval(ordTimer));
+  card.classList.add('wide');
+  icons(card);
+  card.querySelector('#m-close').onclick = () => { sfx.click(); clearInterval(ordTimer); closeModal(); };
+  card.querySelectorAll('.order-card').forEach((el) => {
+    const ty = el.dataset.shop;
+    const d = el.querySelector('.o-deliver');
+    if (d) d.onclick = () => {
+      const r = Ord.deliver(ty); if (!r) return;
+      sfx.coin(); haptic('heavy'); St.progressTask('coins', r.coins);
+      clearInterval(ordTimer); closeModal(true);
+      const lvUp = r.levelUp ? `<p class="lvup">🎉 ${t('shopUp', { b: t('bld_' + ty), n: r.lv })}</p><p>💎 +${Ord.LEVELUP_GEMS} · ${t('shopBoost', { n: (r.lv - 1) * 15 })}</p>` : '';
+      const c2 = modal(`<div class="big-ico" style="font-size:70px;line-height:84px">📦</div><h2>${t('delivered')}</h2>
+        <p style="font-size:22px"><b>+${fmt(r.coins)}</b> 🪙 · ⭐1</p>${lvUp}
+        <div class="actions"><button class="btn btn-green" id="m-ok">${t('okBtn')}</button></div>`);
+      if (r.levelUp) { sfx.win(); city.refresh(); }
+      c2.querySelector('#m-ok').onclick = () => { closeModal(true); renderCityHud(); openOrders(); };
+    };
+    const sw = el.querySelector('.o-swap');
+    if (sw) sw.onclick = () => { sfx.click(); Ord.swapOrder(ty); clearInterval(ordTimer); closeModal(true); openOrders(ty); };
+    const ad = el.querySelector('#o-ad-' + ty);
+    if (ad) ad.onclick = () => watchAd('order', ad, () => { Ord.skipWait(ty); clearInterval(ordTimer); closeModal(true); openOrders(ty); });
+  });
+  clearInterval(ordTimer);
+  ordTimer = setInterval(() => {
+    let reopen = false;
+    card.querySelectorAll('.o-timer').forEach((tm) => { const left = +tm.dataset.ready - Date.now(); if (left <= 0) reopen = true; else tm.textContent = fmtDuration(left); });
+    if (reopen) { clearInterval(ordTimer); closeModal(true); openOrders(focus); }
+  }, 1000);
+}
+
 function onPlotTap(i) {
   sfx.click();
   const p = S.plots[i];
@@ -276,7 +351,8 @@ function onPlotTap(i) {
   const card = modal(`
     <img src="${buildingIcon(p.b, p.lv)}" style="width:120px;height:120px">
     <h2>${t('bld_' + p.b)}</h2>
-    <p>${t('lvl')} ${p.lv}/${MAX_BUILDING_LEVEL} · ${t('income')}: <b style="direction:ltr;display:inline-block">${fmt(incomeOf(p.b, p.lv))}${t('perHour')}</b></p>
+    <p>${t('lvl')} ${p.lv}/${MAX_BUILDING_LEVEL} · ${t('income')}: <b style="direction:ltr;display:inline-block">${fmt(St.plotIncome(p))}${t('perHour')}</b></p>
+    ${Ord.isOrderShop(p.b) ? shopLine(p.b) : ''}
     <div class="perk-box"><b>⚡ ${t('perk')}:</b> ${perkText(p.b, p.lv)}${maxed ? '' : `<br><small>${t('nextLv')}: ${perkText(p.b, p.lv + 1)}</small>`}</div>
     <div class="actions">
       <button class="btn btn-yellow" id="m-collect" ${pend > 0 ? '' : 'disabled'}><i data-i="coin"></i>${t('collect')} ${pend > 0 ? fmt(pend) : ''}</button>
@@ -288,6 +364,7 @@ function onPlotTap(i) {
     </div>`);
   icons(card);
   card.querySelector('#m-close').onclick = () => { sfx.click(); closeModal(); };
+  const so = card.querySelector('#m-shoporder'); if (so) so.onclick = () => { sfx.click(); closeModal(true); openOrders(p.b); };
   const c = card.querySelector('#m-collect'); if (c) c.onclick = () => { const n = St.collectPlot(i); St.progressTask('collect', 1); sfx.coin(); toast('+' + fmt(n)); closeModal(); renderCityHud(); };
   const u = card.querySelector('#m-up'); if (u) u.onclick = () => {
     if (St.upgrade(i)) { sfx.build(); haptic('heavy'); city.refresh(); city.burst(i); toast(t('upgraded')); closeModal(); renderCityHud(); }
@@ -428,6 +505,10 @@ function commitRun(win, res) {
   const coins = itemCoins + tb + (res ? res.winBonus : 0);
   St.addCoins(coins);
   const mats = { ...game.matsRun }; St.addMats(mats);
+  const itemsRun = { ...(game.itemsRun || {}) };
+  for (const n in itemsRun) S.pantry[n] = (S.pantry[n] || 0) + itemsRun[n];
+  const useful = Ord.usefulFromRun(itemsRun);
+  game.itemsRun = {};
   S.stats.swallowed += game.swallowed;
   St.progressTask('swallow', game.swallowed);
   if (game.gemsRun) S.gems += game.gemsRun;
@@ -449,7 +530,7 @@ function commitRun(win, res) {
     }
   }
   St.save();
-  return { coins, itemCoins, tb, mats, gem, hadStreak };
+  return { coins, itemCoins, tb, mats, gem, hadStreak, useful };
 }
 
 function onEnd(res) {
@@ -470,6 +551,7 @@ function onEnd(res) {
         <div class="total"><span>${t('earned')}</span><b>${fmt(total)}<i data-i="coin"></i></b></div>
       </div>
       <div class="mrow" style="justify-content:center">${gainChips(cr.mats)}</div>
+      ${orderGainLine(cr.useful)}
       ${cr.hadStreak ? `<div class="bag-mini lost">🎒 ${t('streakLost')}</div>` : ''}
       ${cr.gem ? `<p>💎 +${cr.gem}</p>` : ''}
       ${res.newSkin ? `<p>🌟 ${t('newSkin')}: <b>${t('skinStars')}</b></p>` : ''}
@@ -631,7 +713,7 @@ async function boot() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  city = new CityScene(renderer, { onPlotTap, onCoinTap });
+  city = new CityScene(renderer, { onPlotTap, onCoinTap, onOrderTap: (i) => { sfx.click(); city.focusPlot(i); openOrders(S.plots[i].b); } });
   game = new HoleGame(renderer, { onEnd, onTutorialDone: () => { S.tut.move = true; St.save(); } });
   city.resize();
   window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); city.resize(); game._resize(); });
@@ -642,6 +724,7 @@ async function boot() {
   $('#btn-play').onclick = preLevel;
   $('#btn-settings').onclick = openSettings;
   $('#btn-bonuses').onclick = openBonuses;
+  $('#btn-orders').onclick = () => { sfx.click(); openOrders(); };
   $('#btn-pause').onclick = pauseGame;
   $('#btn-collect').onclick = () => { const n = St.collectAll(); if (n > 0) { sfx.coin(); haptic('medium'); toast('+' + fmt(n)); } renderCityHud(); };
   $$('.boost').forEach((b) => b.onclick = (e) => { e.stopPropagation(); boosterTap(b.dataset.b); });
@@ -666,7 +749,7 @@ async function boot() {
 
   if (REC) {
     window.__rec = {
-      game, city, St, S: () => St.S, startLevel, backToMenu, showTab, closeModal,
+      game, city, St, S: () => St.S, openOrders, startLevel, backToMenu, showTab, closeModal,
       step(dt, n = 1, beforeEach, render = true) {
         for (let i = 0; i < n; i++) { if (beforeEach) beforeEach(i); if (mode === 'game') game.update(dt); else city.update(dt); }
         if (render) { if (mode === 'game') game.render(); else city.render(); }

@@ -13,6 +13,12 @@ export const THEMES = [
     large: [['cake', 1.6], ['cupcake', 2.6], ['icecream', 2.6], ['cake', 2.4], ['milkshake', 2.4], ['pancakes', 2.2]], decal: 'sweets', movers: ['donut'],
   },
   {
+    id: 'food', floor: ['#ffb27a', '#ffe0c4'], sky: '#ffd6b5', fog: '#ffe4cc',
+    small: [['coffee', 0.8], ['croissant', 0.8], ['tomato', 0.8], ['fries', 0.8], ['lettuce', 0.8]],
+    medium: [['pizza', 1.0], ['bread', 1.0], ['burger', 1.0], ['teapot', 1.0], ['coffee', 1.0]],
+    large: [['pizza', 2.4], ['burger', 2.4], ['bread', 2.2], ['teapot', 2.2]], decal: 'food', movers: ['tomato'],
+  },
+  {
     id: 'toys', floor: ['#a6d3ff', '#d2e9ff'], sky: '#bfe0ff', fog: '#d5ebff',
     small: [['blocks', 0.6], ['ball', 0.6], ['duck', 0.7], ['candy', 0.7], ['dice', 0.7], ['yoyo', 0.7]],
     medium: [['teddy', 0.9], ['robot', 0.9], ['rocket', 0.9], ['toycar', 1.0], ['gift_purple', 1.0], ['train', 0.8]],

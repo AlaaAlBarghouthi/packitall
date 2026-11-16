@@ -6,6 +6,7 @@ export const BUILDINGS = {
   cafe:       { cost: 500,   income: 45,   unlock: 2,  pop: 6 },
   icecream:   { cost: 800,   income: 70,   unlock: 3,  pop: 6 },
   bakery:     { cost: 1100,  income: 95,   unlock: 4,  pop: 8 },
+  pizzeria:   { cost: 1300,  income: 110,  unlock: 5,  pop: 9 },
   park:       { cost: 900,   income: 60,   unlock: 5,  pop: 5 },
   boutique:   { cost: 1500,  income: 130,  unlock: 6,  pop: 10 },
   greenhouse: { cost: 2000,  income: 170,  unlock: 8,  pop: 8 },
@@ -32,6 +33,7 @@ export const MATS = {
 };
 export const MAT_ORDER = Object.keys(MATS);
 export const MATERIAL_OF = {
+  coffee: 'sweet', croissant: 'sweet', bread: 'sweet', pizza: 'nature', tomato: 'nature', lettuce: 'nature', burger: 'nature', fries: 'nature', teapot: 'gift',
   ring: 'gift', heels: 'gift', sunglasses: 'gift', brush: 'gift', chocobar: 'sweet', popsicle: 'sweet', milkshake: 'sweet', pancakes: 'sweet',
   dice: 'toy', yoyo: 'toy', train: 'toy', hotdog: 'nature', frisbee: 'nature', flowerpot: 'nature', parasol: 'nature', trashbin: 'city', trafficlight: 'city', bike: 'city',
   shell: 'nature', starfish: 'nature', sandcastle: 'nature', surfboard: 'nature', crab: 'nature', bucket: 'nature', lifebuoy: 'nature', palm: 'nature', boat: 'city',
@@ -49,7 +51,7 @@ export function materialGain(r) { return Math.max(1, Math.round(r * r * 3)); }
 // materials needed to BUILD (level 1). Upgrades need matCost(type, nextLv).
 export const BUILD_MATS = {
   house: { gift: 20 }, fountain: { gift: 15 }, cafe: { sweet: 25 }, icecream: { sweet: 40 },
-  bakery: { sweet: 50, gift: 25 }, park: { nature: 35 }, boutique: { gift: 70 }, greenhouse: { nature: 60 },
+  bakery: { sweet: 50, gift: 25 }, pizzeria: { nature: 45, sweet: 25 }, park: { nature: 35 }, boutique: { gift: 70 }, greenhouse: { nature: 60 },
   toystore: { toy: 70 }, cinema: { city: 60, toy: 40 }, mansion: { city: 90, gift: 40 }, hotel: { city: 110, sweet: 60 },
   ferris: { toy: 90, nature: 60 }, tower: { city: 160 }, stadium: { nature: 110, toy: 110 }, castle: { gift: 160, city: 160 },
   workshop: { festive: 50 },
@@ -67,6 +69,7 @@ export const PERKS = {
   cafe:       { key: 'magnetS',  per: 1 },
   icecream:   { key: 'coinPct',  per: 10 },
   bakery:     { key: 'timeS',    per: 4 },
+  pizzeria:   { key: 'coinPct',  per: 6 },
   park:       { key: 'sizePct',  per: 7 },
   boutique:   { key: 'gemPct',   per: 20 },
   greenhouse: { key: 'freezeS',  per: 2 },

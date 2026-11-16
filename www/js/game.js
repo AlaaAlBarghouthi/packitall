@@ -28,6 +28,7 @@ function checkerTexture(a, b) {
 const DECALS = {
   beauty: [['heart', '#ff7fb5'], ['star', '#ffffff'], ['flower', '#ffb3d6'], ['bow', '#c58cff']],
   sweets: [['sprinkles', '#ff7fb5'], ['swirl', '#ffffff'], ['drip', '#c97b4a'], ['star', '#ff9fc8']],
+  food:   [['blanket', '#ff6b5a'], ['star', '#fff2d6'], ['swirl', '#ffffff'], ['flower', '#ff7a5a']],
   toys:   [['puzzle', '#ffd23f'], ['star', '#ffffff'], ['target', '#ff6f6f'], ['puzzle', '#7fe0c0']],
   picnic: [['blanket', '#ff5a5a'], ['flower', '#ffffff'], ['grass', '#6fcf5a'], ['flower', '#ffd23f']],
   city:   [['zebra', '#ffffff'], ['arrow', '#ffffff'], ['manhole', '#8a8ea0'], ['parking', '#3d8bff']],
@@ -143,7 +144,7 @@ export class HoleGame {
     this.holeR = r0; this.area = r0 * r0; this.bonusR = 1; this.r0 = r0;
     this.hole = new THREE.Vector3(0, 0, lvl.H * 0.75);
     this.vel = new THREE.Vector2();
-    this.coinsEarned = 0; this.swallowed = 0; this.combo = 0; this.comboT = 0; this.matsRun = {}; this.gemsRun = 0;
+    this.coinsEarned = 0; this.swallowed = 0; this.combo = 0; this.comboT = 0; this.matsRun = {}; this.itemsRun = {}; this.gemsRun = 0;
     this.active = {}; // booster timers
     this.ended = false; this.extraUsed = false; this.tooBigCooldown = 0;
     this.countdown = 1.6; this._camInit = false; this.target = null;
@@ -653,6 +654,7 @@ export class HoleGame {
       return;
     }
     this.swallowed++;
+    if (!it.pickup) this.itemsRun[it.name] = (this.itemsRun[it.name] || 0) + 1;
     // growth by area
     this.area += it.r * it.r * GROW_K;
     const before = this.holeR;
