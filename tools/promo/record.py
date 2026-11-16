@@ -4,7 +4,8 @@ from playwright.async_api import async_playwright
 
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'preview'   # preview | game | city | end
 XMAS = os.environ.get('XMAS') == '1'
-SUF = '_x' if XMAS else ''
+EN = os.environ.get('EN') == '1'
+SUF = '_x' if XMAS else '_en' if EN else ''
 OUT = '/home/claude/video'
 FPS = 30
 import threading, http.server, functools, socket
@@ -20,6 +21,8 @@ SAVE = {'v': 1, 'coins': 12450, 'gems': 85, 'level': 6, 'stars': {}, 'hearts': 5
         'boosters': {'magnet': 3, 'tornado': 2, 'freeze': 2, 'grow': 2},
         'settings': {'sound': False, 'vib': False, 'lang': 'ar'}, 'tutorial': False, 'tut': {'move': True, 'city': True}}
 if XMAS: SAVE.update({'level': 2, 'skin': 'candy', 'skins': ['classic', 'candy']})
+if EN: SAVE.update({'level': 8, 'skin': 'fire', 'skins': ['classic', 'fire'], 'settings': {'sound': False, 'vib': False, 'lang': 'en'}})
+SAVE.setdefault('tut', {})['bomb'] = True
 
 CAPTION_CSS = """
 #cap{position:fixed;left:0;right:0;top:30%;z-index:70;text-align:center;pointer-events:none;font-family:Baloo,sans-serif;
@@ -49,7 +52,7 @@ async def caption(pg, html):
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
-        ctx = await b.new_context(viewport={'width': 540, 'height': 960}, device_scale_factor=2, locale='ar-JO')
+        ctx = await b.new_context(viewport={'width': 540, 'height': 960}, device_scale_factor=2, locale='en-US' if EN else 'ar-JO')
         pg = await ctx.new_page()
         pg.on('pageerror', lambda e: print('ERR', e))
         await pg.add_init_script("localStorage.setItem('packitall_save_v1', %s)" % json.dumps(json.dumps(SAVE)))
@@ -69,6 +72,8 @@ async def main():
               window.__lastSw = 0; }""")
             caps = [(0, 80, 'قدّيش بتقدر <span class="y">تبلع</span>؟ 🕳️'), (150, 245, 'كل ما تبلع...<br><span class="y">بتكبر!</span> 😳'),
                     (335, 420, '<span class="y">ابلع</span> كل شي! 🔥')]
+            if EN: caps = [(0, 80, 'How much can you <span class="y">swallow</span>? 🕳️'), (150, 245, 'The more you eat...<br>the <span class="y">BIGGER</span> you get! 😳'),
+                    (335, 420, 'Swallow <span class="y">EVERYTHING</span>! 🔥')]
             if XMAS: caps = [(0, 90, 'ابلع <span class="y">زينة العيد</span>! 🎄'), (150, 245, 'كل ما تبلع...<br><span class="y">بتكبر!</span> ❄️'),
                     (335, 420, '<span class="y">بابا نويل</span> ناطرك! 🎅')]
             N = 420
@@ -99,6 +104,7 @@ async def main():
             order = [5, 6, 9, 10, 1, 2, 4, 8, 7, 11, 13, 14, 0, 3, 12, 15]
             types = ['house', 'cafe', 'icecream', 'fountain', 'boutique', 'bakery', 'greenhouse', 'park', 'mansion', 'cinema', 'hotel', 'tower', 'toystore', 'ferris', 'stadium', 'castle']
             caps = [(0, 130, 'وبالكوينز...<br><span class="y">ابنِ مدينتك</span> 🏙️'), (190, 330, 'من بيت صغير...<br><span class="y">لمدينة كاملة</span> ✨')]
+            if EN: caps = [(0, 130, 'Then build your<br><span class="y">dream city</span> 🏙️'), (190, 330, 'From one house...<br>to a <span class="y">whole city</span> ✨')]
             if XMAS:
                 caps = [(0, 130, 'وزيّن <span class="y">مدينتك</span><br>للعيد 🎄'), (190, 330, 'ثلج... أضواء...<br><span class="y">ومزلجة طايرة!</span> 🛷')]
                 types = ['workshop' if t == 'fountain' else t for t in types]
@@ -124,12 +130,12 @@ async def main():
                 json.dump(events, open(f'{OUT}/events_city{SUF}.json', 'w'))
 
         if MODE in ('preview', 'end'):
-            await pg.evaluate(f"window.__X = {'true' if XMAS else 'false'}")
+            await pg.evaluate(f"window.__X = {'true' if XMAS else 'false'}; window.__EN = {'true' if EN else 'false'}")
             await pg.evaluate("""() => { document.body.insertAdjacentHTML('beforeend', `<div id="endcard" style="position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;background:${window.__X ? 'radial-gradient(circle at 50% 42%,#e8323e,#5a0a18 72%)' : 'radial-gradient(circle at 50% 42%,#9a5cf0,#2a1458 70%)'};font-family:Baloo,sans-serif">
               <img src="icon-512.png" style="width:230px;height:230px;border-radius:54px;box-shadow:0 12px 0 #1d0a4a,0 0 0 8px #fff">
               <div class="logo big" style="transform:rotate(-4deg) scale(1.15)"><span>PACK</span><span>IT ALL</span></div>
-              <div style="font-weight:800;font-size:40px;color:#fff;text-shadow:0 3px 0 #3a1580">${window.__X ? 'عيد ميلاد مجيد 🎄' : 'ابلع · اجمع · ابنِ'}</div>
-              <div class="btn btn-green btn-big" style="font-size:34px;min-width:300px">العبها مجاناً 🎮</div></div>`); }""")
+              <div style="font-weight:800;font-size:40px;color:#fff;text-shadow:0 3px 0 #3a1580">${window.__X ? 'عيد ميلاد مجيد 🎄' : window.__EN ? 'Swallow · Collect · Build' : 'ابلع · اجمع · ابنِ'}</div>
+              <div class="btn btn-green btn-big" style="font-size:34px;min-width:300px">${window.__EN ? 'Play free 🎮' : 'العبها مجاناً 🎮'}</div></div>`); }""")
             await pg.wait_for_timeout(800)
             await pg.screenshot(path=f'{OUT}/end{SUF}.png' if MODE == 'end' else f'{OUT}/prev_end.jpg', type='png' if MODE == 'end' else 'jpeg')
         await b.close()
