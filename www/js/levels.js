@@ -72,7 +72,7 @@ export function generateLevel(n, opts = {}) {
   const W = 20 + d * 0.45;     // world half-extent x
   const H = W * 1.45;          // world half-extent z
   const kind = n >= 10 && n % 10 === 0 ? 'boss' : n >= 5 && n % 5 === 0 ? 'hard' : 'normal';
-  const time = kind === 'boss' ? Math.min(170, 120 + d * 1.5) : Math.min(150, 75 + d * 2.5);
+  const time = kind === 'boss' ? Math.min(200, 150 + d * 1.5) : Math.min(150, 75 + d * 2.5);
 
   const pick = (arr) => arr[Math.floor(R() * arr.length)];
   const shuffled = (arr) => arr.slice().sort(() => R() - 0.5);

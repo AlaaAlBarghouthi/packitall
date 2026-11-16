@@ -401,25 +401,32 @@ export class HoleGame {
 
   // ---------------------------------------------------------------- input
   _bindInput() {
-    // Finger-follow control: the hole moves with your finger (relative drag), like the classic hole games.
+    // Floating joystick (appears where you touch). Direction from the knob, speed from a smooth curve.
     const cvs = this.renderer.domElement;
+    const joy = $('#joy'), knob = $('#joy-knob');
+    const MAXP = 50;
     const down = (e) => {
       if (!this.running || this.paused || this.ended) return;
-      this.input.active = true; this.input.lx = e.clientX; this.input.ly = e.clientY;
-      if (!this.target) this.target = new THREE.Vector2(this.hole.x, this.hole.z);
-      this.target.set(this.hole.x, this.hole.z);
+      this.input.active = true; this.input.sx = e.clientX; this.input.sy = e.clientY; this.input.dx = 0; this.input.dy = 0;
+      joy.style.left = e.clientX + 'px'; joy.style.top = e.clientY + 'px'; joy.classList.add('show');
+      knob.style.transform = 'translate(-50%,-50%)';
     };
     const move = (e) => {
       if (!this.input.active) return;
-      const dx = e.clientX - this.input.lx, dy = e.clientY - this.input.ly;
-      this.input.lx = e.clientX; this.input.ly = e.clientY;
-      // world units per screen pixel at the hole's distance from the camera
-      const dist = this.camera.position.distanceTo(this.hole);
-      const wpp = (2 * dist * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))) / Math.max(1, window.innerHeight);
-      const SENS = 1.35;
-      this.target.x += dx * wpp * SENS; this.target.y += dy * wpp * SENS * 1.25; // a bit more on the vertical axis (perspective)
+      let dx = e.clientX - this.input.sx, dy = e.clientY - this.input.sy;
+      const L = Math.hypot(dx, dy);
+      if (L > MAXP) { // drag the base along so direction changes stay responsive
+        const k = (L - MAXP) / L; this.input.sx += dx * k; this.input.sy += dy * k;
+        joy.style.left = this.input.sx + 'px'; joy.style.top = this.input.sy + 'px';
+        dx = e.clientX - this.input.sx; dy = e.clientY - this.input.sy;
+      }
+      const l = Math.hypot(dx, dy);
+      // dead zone 6px, then speed ramps from 45% to 100% (never a crawl, never a jump)
+      let m = l < 6 ? 0 : 0.45 + 0.55 * Math.min(1, (l - 6) / (MAXP - 6));
+      this.input.dx = l > 0 ? dx / l * m : 0; this.input.dy = l > 0 ? dy / l * m : 0;
+      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
     };
-    const up = () => { this.input.active = false; };
+    const up = () => { this.input.active = false; this.input.dx = this.input.dy = 0; joy.classList.remove('show'); };
     cvs.addEventListener('pointerdown', down);
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -485,32 +492,18 @@ export class HoleGame {
     // movement
     const R = this.holeR * this.bonusR;
     const W = this.level.W, H = this.level.H;
-    const maxSpeed = 11 + this.holeR * 1.6;           // never faster than this
     let ix = this.input.dx || 0, iy = this.input.dy || 0;
     const K = this.input.keys;
     if (K['arrowleft'] || K['a']) ix -= 1; if (K['arrowright'] || K['d']) ix += 1;
     if (K['arrowup'] || K['w']) iy -= 1; if (K['arrowdown'] || K['s']) iy += 1;
-    if (!this.target) this.target = new THREE.Vector2(this.hole.x, this.hole.z);
-    if (!this.input.active && (ix || iy)) {
-      // keyboard / bot: steady speed in a direction
-      const L = Math.hypot(ix, iy) || 1;
-      this.target.set(this.hole.x + ix / L * maxSpeed * 0.12, this.hole.z + iy / L * maxSpeed * 0.12);
-    } else if (!this.input.active) {
-      this.target.set(this.hole.x, this.hole.z);         // finger lifted: stop
-    }
-    this.target.x = THREE.MathUtils.clamp(this.target.x, -W + R * 0.6, W - R * 0.6);
-    this.target.y = THREE.MathUtils.clamp(this.target.y, -H + R * 0.6, H - R * 0.6);
-    // smooth, speed-capped approach to the target
-    const tx = this.target.x - this.hole.x, tz = this.target.y - this.hole.z, td = Math.hypot(tx, tz);
-    const want = Math.min(maxSpeed, td * 14);
-    const vx = td > 1e-4 ? tx / td * want : 0, vz = td > 1e-4 ? tz / td * want : 0;
-    const acc = Math.min(1, dt * 18);
-    this.vel.x += (vx - this.vel.x) * acc; this.vel.y += (vz - this.vel.y) * acc;
-    const step = Math.hypot(this.vel.x, this.vel.y) * dt;
-    if (step > td && td < 0.05) { this.hole.x = this.target.x; this.hole.z = this.target.y; }
-    else { this.hole.x += this.vel.x * dt; this.hole.z += this.vel.y * dt; }
-    this.hole.x = THREE.MathUtils.clamp(this.hole.x, -W + R * 0.6, W - R * 0.6);
-    this.hole.z = THREE.MathUtils.clamp(this.hole.z, -H + R * 0.6, H - R * 0.6);
+    const L = Math.hypot(ix, iy); if (L > 1) { ix /= L; iy /= L; }
+    // steady speed: grows only a little with the hole so big holes don't feel sluggish or crazy
+    const speed = 8.5 + Math.min(this.holeR, 5) * 0.75;
+    const tx = ix * speed, tz = iy * speed;
+    const acc = Math.min(1, dt * ((ix || iy) ? 9 : 14)); // gentle start, quick stop
+    this.vel.x += (tx - this.vel.x) * acc; this.vel.y += (tz - this.vel.y) * acc;
+    this.hole.x = THREE.MathUtils.clamp(this.hole.x + this.vel.x * dt, -W + R * 0.6, W - R * 0.6);
+    this.hole.z = THREE.MathUtils.clamp(this.hole.z + this.vel.y * dt, -H + R * 0.6, H - R * 0.6);
 
     this._updateHole();
     this._items(dt, R);
@@ -708,7 +701,7 @@ export class HoleGame {
   }
   _end(win, reason) {
     if (this.ended) return;
-    this.ended = true; this.input.active = false;
+    this.ended = true; this.input.active = false; this.input.dx = this.input.dy = 0; $('#joy').classList.remove('show');
     const pctLeft = this.timeLeft / this.level.time;
     const stars = win ? (pctLeft > 0.4 ? 3 : pctLeft > 0.15 ? 2 : 1) : 0;
     const timeBonus = win ? Math.round(this.timeLeft * 2) : 0;
