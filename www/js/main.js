@@ -112,7 +112,8 @@ function renderMap() {
     const st = S.stars[n] || 0;
     const cls = n < cur ? 'done' : n === cur ? 'cur' : '';
     const off = Math.sin(n * 1.3) * 70;
-    html += `<div class="node ${cls}" style="transform:translateX(${off}px)">${n}
+    const nk = n >= 10 && n % 10 === 0 ? 'boss' : n >= 5 && n % 5 === 0 ? 'hard' : '';
+    html += `<div class="node ${cls} ${nk}" style="transform:translateX(${off}px)">${n}${nk ? `<span class="nk">${nk === 'boss' ? '👑' : '💪'}</span>` : ''}
       ${n < cur ? `<div class="stars">${[1, 2, 3].map(k => `<i data-i="star" class="${k <= st ? '' : 'off'}"></i>`).join('')}</div>` : ''}</div>`;
     if (n < to) html += `<div class="node-path" style="transform:translateX(${(off + Math.sin((n + 1) * 1.3) * 70) / 2}px)"></div>`;
   }
@@ -171,12 +172,19 @@ function renderTasks() {
 }
 
 const SKIN_LIST = [{ id: 'classic', name: 'skinClassic', css: 'radial-gradient(circle,#05010d 52%,#c58cff 54%,#c58cff 62%,rgba(190,110,255,.35) 66%,transparent 74%)' },
-  { id: 'candy', name: 'skinCandy', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),repeating-conic-gradient(#ff2f4e 0 15deg,#fff 15deg 30deg)', event: true }];
+  { id: 'candy', name: 'skinCandy', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),repeating-conic-gradient(#ff2f4e 0 15deg,#fff 15deg 30deg)', event: true },
+  { id: 'fire', name: 'skinFire', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),conic-gradient(#ffd23f,#ff4e1c,#ffd23f,#ff4e1c,#ffd23f)', gems: 60 },
+  { id: 'ice', name: 'skinIce', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),conic-gradient(#ffffff,#7fd3ff,#ffffff,#3aa6e8,#ffffff)', gems: 60 },
+  { id: 'hearts', name: 'skinHearts', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),repeating-conic-gradient(#ff5aa5 0 20deg,#ffc2e0 20deg 40deg)', gems: 40 },
+  { id: 'stars', name: 'skinStars', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),repeating-conic-gradient(#ffd23f 0 8deg,#3b2fc0 8deg 30deg)', boss: true },
+  { id: 'gold', name: 'skinGold', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),conic-gradient(#fff3b0,#e09a14,#fff3b0,#e09a14,#fff3b0)', gems: 120 }];
 function skinCards() {
   return SKIN_LIST.map((k) => {
     const own = S.skins.includes(k.id), using = S.skin === k.id;
     return `<div class="card shop-item"><div class="skin-ico" style="background:${k.css}"></div><b>${t(k.name)}</b>
-      ${own ? `<button class="btn ${using ? 'btn-gray' : 'btn-green'}" data-skin="${k.id}" ${using ? 'disabled' : ''}>${using ? t('inUse') : t('use')}</button>` : `<p>🎄 ${t('eventOnly')}</p>`}</div>`;
+      ${own ? `<button class="btn ${using ? 'btn-gray' : 'btn-green'}" data-skin="${k.id}" ${using ? 'disabled' : ''}>${using ? t('inUse') : t('use')}</button>`
+        : k.gems ? `<button class="btn btn-pink" data-buyskin="${k.id}" ${S.gems >= k.gems ? '' : 'disabled'} style="direction:ltr"><i data-i="gem"></i>${k.gems}</button>`
+        : k.boss ? `<p>👑 ${t('bossOnly')}</p>` : `<p>🎄 ${t('eventOnly')}</p>`}</div>`;
   }).join('');
 }
 function holidayGift(after) {
@@ -246,6 +254,7 @@ function renderShop() {
   const ag = $('#btn-adgift'); if (ag) ag.onclick = () => watchAd('gift', ag, () => { S.giftTs = 0; S.coins += 100; S.gems += 2; S.giftTs = Date.now(); St.save(); sfx.win(); renderShop(); });
   const abo = $('#btn-adboost'); if (abo) abo.onclick = () => watchAd('freeboost', abo, () => { const ks = Object.keys(BOOSTERS); const k = ks[Math.floor(Math.random() * ks.length)]; S.boosters[k] = (S.boosters[k] || 0) + 1; St.save(); sfx.coin(); toast('+1 ' + t(k)); renderShop(); });
   el.querySelectorAll('[data-skin]').forEach((b) => b.onclick = () => { S.skin = b.dataset.skin; St.save(); sfx.click(); renderShop(); });
+  el.querySelectorAll('[data-buyskin]').forEach((b) => b.onclick = () => { const k = SKIN_LIST.find((x) => x.id === b.dataset.buyskin); if (k && St.spendGems(k.gems)) { S.skins.push(k.id); S.skin = k.id; St.save(); sfx.win(); haptic('heavy'); renderShop(); } });
   el.querySelectorAll('[data-buypre]').forEach((b) => b.onclick = () => { const k = b.dataset.buypre; if (St.spendCoins(PRE_BOOSTERS[k].price)) { S.pre[k] = (S.pre[k] || 0) + 1; St.save(); sfx.coin(); renderShop(); } });
   const g = $('#btn-gift'); if (g && giftReady) g.onclick = () => { S.giftTs = Date.now(); S.coins += 100; S.gems += 2; St.save(); sfx.win(); renderShop(); };
   $('#btn-refill').onclick = () => { if (St.spendGems(REFILL_GEMS)) { St.refillHearts(); sfx.goal(); renderShop(); } };
@@ -323,7 +332,8 @@ function preLevel() {
   const th = (xmasActive() && S.level > 1 && S.level % 2 === 0) ? 'xmas' : THEMES[(S.level - 1) % THEMES.length].id;
   const st = S.streak || 0;
   const slots = [1, 2, 3].map((k) => `<div class="sk ${k <= st ? 'on' : ''}"><span>⚡${k}</span><span>⏳${k}</span></div>`).join('');
-  const card = modal(`<div class="pl-title">${t('level')} ${S.level}</div><div class="pl-theme">${t('theme_' + th)}</div>
+  const kind = S.level >= 10 && S.level % 10 === 0 ? 'boss' : S.level >= 5 && S.level % 5 === 0 ? 'hard' : 'normal';
+  const card = modal(`<div class="pl-title">${t('level')} ${S.level}</div>${kind !== 'normal' ? `<div class="kind-tag ${kind}">${t('kind_' + kind)}</div>` : ''}<div class="pl-theme">${t('theme_' + th)}</div>
     <div class="bag">
       <div class="bag-ico">🎒</div>
       <div class="bag-body"><b>${t('streakBag')}</b>
@@ -431,6 +441,12 @@ function commitRun(win, res) {
     if (res.level === S.level) S.level++;
     if (res.stars === 3) S.gems += 1;
     if (Math.random() * 100 < P.gemPct) { S.gems += 1; gem = 1; }
+    if (res.kind === 'hard') { S.gems += 2; gem += 2; }
+    if (res.kind === 'boss') {
+      S.gems += 5; gem += 5;
+      const ks = Object.keys(BOOSTERS); for (let i = 0; i < 2; i++) { const k = ks[Math.floor(Math.random() * ks.length)]; S.boosters[k] = (S.boosters[k] || 0) + 1; }
+      if (!S.skins.includes('stars')) { S.skins.push('stars'); res.newSkin = 'stars'; }
+    }
   }
   St.save();
   return { coins, itemCoins, tb, mats, gem, hadStreak };
@@ -444,6 +460,7 @@ function onEnd(res) {
     const unlockedPlots = PLOT_UNLOCK.filter((u) => u === S.level && prevLevel < S.level).length;
     const newBld = BUILDING_ORDER.filter((k) => BUILDINGS[k].unlock === S.level && prevLevel < S.level);
     const card = modal(`
+      ${res.kind !== 'normal' ? `<div class="kind-tag ${res.kind}">${t('kind_' + res.kind)} · ${res.kind === 'boss' ? '×3' : '×2'}</div>` : ''}
       <h2>${t('win')}</h2>
       <div class="big-stars">${[1, 2, 3].map((k) => `<i data-i="star" class="${k <= res.stars ? 'on' : ''}"></i>`).join('')}</div>
       <div class="reward-lines">
@@ -454,7 +471,8 @@ function onEnd(res) {
       </div>
       <div class="mrow" style="justify-content:center">${gainChips(cr.mats)}</div>
       ${cr.hadStreak ? `<div class="bag-mini lost">🎒 ${t('streakLost')}</div>` : ''}
-      ${cr.gem ? `<p>💎 ${t('gemBonus')}</p>` : ''}
+      ${cr.gem ? `<p>💎 +${cr.gem}</p>` : ''}
+      ${res.newSkin ? `<p>🌟 ${t('newSkin')}: <b>${t('skinStars')}</b></p>` : ''}
       <div class="bag-mini">🎒 ${t('streakBag')} <b>${S.streak}/${STREAK_MAX}</b> · ⚡${S.streak} ⏳${S.streak}</div>
       ${newBld.length ? `<p>🔓 ${newBld.map((k) => t('bld_' + k)).join('، ')}</p>` : ''}
       ${unlockedPlots ? `<p>🔓 ${t('emptyPlot')} +${unlockedPlots}</p>` : ''}

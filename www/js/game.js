@@ -32,6 +32,9 @@ const DECALS = {
   picnic: [['blanket', '#ff5a5a'], ['flower', '#ffffff'], ['grass', '#6fcf5a'], ['flower', '#ffd23f']],
   city:   [['zebra', '#ffffff'], ['arrow', '#ffffff'], ['manhole', '#8a8ea0'], ['parking', '#3d8bff']],
   xmas:   [['snowflake', '#ffffff'], ['star', '#ffd23f'], ['holly', '#2fae55'], ['snowflake', '#cfe8ff']],
+  beach:  [['wave', '#6fd0ff'], ['shellmark', '#ffffff'], ['sun', '#ffb21f'], ['wave', '#ffffff']],
+  farm:   [['hay', '#f2cf5a'], ['flower', '#ffffff'], ['paw', '#8a5a2a'], ['grass', '#5fb84a']],
+  space:  [['star', '#ffffff'], ['ring', '#b98cff'], ['star', '#ffd23f'], ['dots', '#ffffff']],
 };
 const atlasCache = {};
 function decalAtlas(id) {
@@ -62,6 +65,13 @@ function drawDecal(g, shape, col) {
     case 'arrow': g.globalAlpha = 0.7; g.beginPath(); g.moveTo(0, -110); g.lineTo(70, -20); g.lineTo(25, -20); g.lineTo(25, 110); g.lineTo(-25, 110); g.lineTo(-25, -20); g.lineTo(-70, -20); g.closePath(); g.fill(); break;
     case 'manhole': g.globalAlpha = 0.6; g.beginPath(); g.arc(0, 0, 90, 0, 7); g.fill(); g.strokeStyle = '#ffffff'; g.lineWidth = 6; for (let i = -3; i <= 3; i++) { g.beginPath(); g.moveTo(-80, i * 22); g.lineTo(80, i * 22); g.stroke(); } break;
     case 'parking': g.globalAlpha = 0.6; g.beginPath(); g.roundRect(-90, -90, 180, 180, 30); g.fill(); g.fillStyle = '#ffffff'; g.font = 'bold 150px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('P', 0, 8); break;
+    case 'wave': g.lineWidth = 14; for (let k = -1; k <= 1; k++) { g.beginPath(); for (let x = -110; x <= 110; x += 4) g.lineTo(x, k * 40 + Math.sin(x / 22) * 14); g.stroke(); } break;
+    case 'shellmark': for (let i = 0; i < 7; i++) { g.save(); g.rotate(-0.9 + i * 0.3); g.beginPath(); g.ellipse(0, -45, 18, 55, 0, 0, 7); g.fill(); g.restore(); } break;
+    case 'sun': g.beginPath(); g.arc(0, 0, 45, 0, 7); g.fill(); g.lineWidth = 12; for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; g.beginPath(); g.moveTo(Math.cos(a) * 62, Math.sin(a) * 62); g.lineTo(Math.cos(a) * 100, Math.sin(a) * 100); g.stroke(); } break;
+    case 'hay': g.lineWidth = 6; for (let i = 0; i < 30; i++) { const a = Math.random() * 6.28, r = Math.random() * 80; g.beginPath(); g.moveTo(Math.cos(a) * r, Math.sin(a) * r); g.lineTo(Math.cos(a) * r + Math.cos(a * 3) * 40, Math.sin(a) * r + Math.sin(a * 3) * 40); g.stroke(); } break;
+    case 'paw': g.beginPath(); g.ellipse(0, 25, 42, 36, 0, 0, 7); g.fill(); [[-48, -25], [-17, -55], [17, -55], [48, -25]].forEach(([x, y]) => { g.beginPath(); g.ellipse(x, y, 17, 22, 0, 0, 7); g.fill(); }); break;
+    case 'ring': g.lineWidth = 16; g.beginPath(); g.ellipse(0, 0, 105, 38, -0.3, 0, 7); g.stroke(); g.beginPath(); g.arc(0, 0, 50, 0, 7); g.fill(); break;
+    case 'dots': for (let i = 0; i < 26; i++) { g.beginPath(); g.arc((Math.random() - 0.5) * 220, (Math.random() - 0.5) * 220, 3 + Math.random() * 6, 0, 7); g.fill(); } break;
     case 'snowflake': g.lineWidth = 14; for (let i = 0; i < 6; i++) { g.save(); g.rotate(i * Math.PI / 3); g.beginPath(); g.moveTo(0, 0); g.lineTo(0, -100); g.moveTo(0, -60); g.lineTo(-28, -85); g.moveTo(0, -60); g.lineTo(28, -85); g.stroke(); g.restore(); } break;
     case 'holly': for (const a of [-0.6, 0.6]) { g.save(); g.rotate(a); g.beginPath(); g.ellipse(0, -50, 30, 62, 0, 0, 7); g.fill(); g.restore(); } g.globalAlpha = 0.85; g.fillStyle = '#e8323e'; [[-16, 10], [16, 10], [0, -8]].forEach(([x, y]) => { g.beginPath(); g.arc(x, y, 18, 0, 7); g.fill(); }); break;
   }
@@ -71,7 +81,23 @@ function drawDecal(g, shape, col) {
 export const SKINS = {
   classic: { rim: 0xc58cff, glow: [190, 110, 255] },
   candy:   { rim: 'stripes', glow: [255, 90, 110], glow2: [120, 255, 160] },
+  fire:    { rim: 'fire',   glow: [255, 120, 30], glow2: [255, 220, 80] },
+  ice:     { rim: 'ice',    glow: [90, 200, 255], glow2: [220, 250, 255] },
+  hearts:  { rim: 'hearts', glow: [255, 90, 170], glow2: [255, 190, 220] },
+  stars:   { rim: 'stars',  glow: [90, 80, 255], glow2: [255, 230, 90] },
+  gold:    { rim: 'gold',   glow: [255, 200, 40], glow2: [255, 245, 170] },
 };
+function rimTexture(kind) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 64; const g = c.getContext('2d');
+  const grad = (stops) => { const gr = g.createLinearGradient(0, 0, 0, 64); stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.fillRect(0, 0, 512, 64); };
+  if (kind === 'fire') { grad([[0, '#ffe36b'], [0.5, '#ff7a1c'], [1, '#d4141a']]); for (let i = 0; i < 26; i++) { g.fillStyle = i % 2 ? '#ffd23f' : '#ff4e1c'; g.beginPath(); const x = i * 20; g.moveTo(x, 64); g.quadraticCurveTo(x + 4, 20, x + 10, 6); g.quadraticCurveTo(x + 16, 24, x + 20, 64); g.fill(); } }
+  else if (kind === 'ice') { grad([[0, '#ffffff'], [0.5, '#9fe3ff'], [1, '#3aa6e8']]); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 3; for (let i = 0; i < 18; i++) { const x = i * 28 + 10; g.beginPath(); g.moveTo(x, 10); g.lineTo(x, 54); g.moveTo(x - 12, 32); g.lineTo(x + 12, 32); g.moveTo(x - 8, 18); g.lineTo(x + 8, 46); g.moveTo(x + 8, 18); g.lineTo(x - 8, 46); g.stroke(); } }
+  else if (kind === 'hearts') { grad([[0, '#ffc2e0'], [1, '#ff5aa5']]); g.fillStyle = '#ffffff'; for (let i = 0; i < 16; i++) { const x = i * 32 + 16, y = 32; g.beginPath(); g.moveTo(x, y + 12); g.bezierCurveTo(x - 18, y, x - 10, y - 16, x, y - 6); g.bezierCurveTo(x + 10, y - 16, x + 18, y, x, y + 12); g.fill(); } }
+  else if (kind === 'stars') { grad([[0, '#5a4ee0'], [1, '#221a7a']]); g.fillStyle = '#ffd23f'; for (let i = 0; i < 16; i++) { const cx = i * 32 + 16, cy = 32; g.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 6 : 14, a = k * Math.PI / 5 - Math.PI / 2; g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } g.fill(); } }
+  else if (kind === 'gold') { grad([[0, '#fff3b0'], [0.35, '#ffd23f'], [0.7, '#e09a14'], [1, '#fff0a0']]); g.fillStyle = 'rgba(255,255,255,.6)'; for (let i = 0; i < 12; i++) g.fillRect(i * 44, 8, 6, 48); }
+  else return stripeTexture();
+  const tx = new THREE.CanvasTexture(c); tx.wrapS = THREE.RepeatWrapping; tx.colorSpace = THREE.SRGBColorSpace; return tx;
+}
 function stripeTexture() {
   const c = document.createElement('canvas'); c.width = 512; c.height = 32;
   const g = c.getContext('2d');
@@ -200,7 +226,7 @@ export class HoleGame {
     glow.rotation.x = -Math.PI / 2; glow.position.y = 0.03; this.holeGroup.add(glow); this.glow = glow;
     // skin
     const sk = SKINS[opts.skin] || SKINS.classic;
-    if (sk.rim === 'stripes') { rim.material.map = stripeTexture(); rim.material.color.set(0xffffff); rim.geometry.dispose(); rim.geometry = new THREE.TorusGeometry(1, 0.085, 12, 96); }
+    if (typeof sk.rim === 'string') { rim.material.map = rimTexture(sk.rim); rim.material.color.set(0xffffff); rim.geometry.dispose(); rim.geometry = new THREE.TorusGeometry(1, 0.09, 12, 96); }
     else rim.material.color.set(sk.rim);
     if (opts.skin && opts.skin !== 'classic') { glow.material.map = glowTexture(sk.glow, sk.glow2); }
     // falling snow in the holiday world
@@ -233,7 +259,7 @@ export class HoleGame {
       mesh.castShadow = m.foot * it.scale >= 0.35; mesh.receiveShadow = false;
       this.scene.add(mesh);
       return { mesh, name: it.name, scale: it.scale, r: m.foot * it.scale, h: m.height * it.scale,
-        big: !!it.big, hazard: !!it.hazard, pickup: it.pickup || null, mover: !!it.mover, heading: Math.random() * 6.28, speed: 1.2 + Math.random() * 1.6, bob: Math.random() * 6.28, x: it.x, z: it.z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: (Math.random() - 0.5) * 8 };
+        big: !!it.big, boss: !!it.boss, hazard: !!it.hazard, pickup: it.pickup || null, mover: !!it.mover, heading: Math.random() * 6.28, speed: 1.2 + Math.random() * 1.6, bob: Math.random() * 6.28, x: it.x, z: it.z, y: 0, vy: 0, falling: false, alive: true, tilt: 0, spin: (Math.random() - 0.5) * 8 };
     });
 
     // win-streak / selected boosters waiting in front of the hole (swallow to activate)
@@ -255,6 +281,15 @@ export class HoleGame {
       m.rotation.x = -Math.PI / 2; m.position.set(it.x, 0.03, it.z); m.scale.setScalar(it.r); this.scene.add(m); it.ring = m; this.hazRings.push(m);
     });
     this.invuln = 0;
+    this.bossIt = this.items.find((it) => it.boss) || null;
+    if (this.bossIt) {
+      const b = this.bossIt;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.3, 48), new THREE.MeshBasicMaterial({ color: 0xffc21f, transparent: true, opacity: 0.7, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(b.x, 0.03, b.z); ring.scale.setScalar(b.r); this.scene.add(ring); b.ring = ring; this.hazRings.push(ring);
+      const c = document.createElement('canvas'); c.width = c.height = 128; const g2 = c.getContext('2d'); g2.font = '96px serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle'; g2.fillText('👑', 64, 70);
+      const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
+      const cr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, depthWrite: false })); cr.scale.set(3, 3, 1); cr.position.set(b.x, b.h + 1.8, b.z); this.scene.add(cr); this.crown = cr;
+    } else this.crown = null;
     this.goals = lvl.goals.map(g => ({ ...g, got: 0 }));
     this._buildHud();
     this._updateHole(true);
@@ -286,7 +321,7 @@ export class HoleGame {
     const goalsEl = $('#goals');
     goalsEl.innerHTML = this.goals.map((g, i) => `
       <div class="goal" data-i="${i}">
-        <div class="goal-ico" style="background-image:url(${modelIcon(g.name)})">${g.big ? '<span class="big-tag">XL</span>' : ''}</div>
+        <div class="goal-ico" style="background-image:url(${modelIcon(g.name)})">${g.boss ? '<span class="big-tag boss">👑</span>' : g.big ? '<span class="big-tag">XL</span>' : ''}</div>
         <div class="goal-cnt"><span>0</span>/${g.need}</div>
         <div class="goal-check">✓</div>
       </div>`).join('');
@@ -325,6 +360,7 @@ export class HoleGame {
   _showIntro() {
     const el = $('#intro');
     el.innerHTML = `<div class="intro-card">
+      ${this.level.kind !== 'normal' ? `<div class="kind-tag ${this.level.kind}">${t('kind_' + this.level.kind)}</div>` : ''}
       <div class="intro-title">${t('level')} ${this.level.n}</div>
       <div class="intro-sub">${t('theme_' + this.level.theme.id)}</div>
       <div class="intro-goals">${this.goals.map(g => `<div class="ig"><img src="${modelIcon(g.name)}"/><b>×${g.need}</b></div>`).join('')}</div>
@@ -558,7 +594,7 @@ export class HoleGame {
         } else {
           // too big: wobble a little
           m.rotation.z = Math.sin(this.elapsed * 30) * 0.03;
-          if (this.tooBigCooldown <= 0 && d < R * 0.8) { this.tooBigCooldown = 3; this.floater(t('tooBig'), 'warn-f'); sfx.bump(); }
+          if (this.tooBigCooldown <= 0 && d < R * 0.8) { this.tooBigCooldown = 3; this.floater(it.boss ? t('bossTooBig') : t('tooBig'), 'warn-f'); sfx.bump(); }
         }
       } else if (it.tilt) { it.tilt = 0; m.rotation.x = 0; m.rotation.z = 0; m.position.y = 0; }
     }
@@ -566,6 +602,7 @@ export class HoleGame {
 
   _hazardFx(dt) {
     const t = performance.now() * 0.006;
+    if (this.crown) { if (this.bossIt && this.bossIt.alive && !this.bossIt.falling) { this.crown.position.y = this.bossIt.h + 1.8 + Math.sin(t * 0.5) * 0.3; this.bossIt.mesh.rotation.y += dt * 0.25; } else { this.scene.remove(this.crown); this.crown = null; } }
     if (this.hazRings) this.hazRings.forEach((m, i) => { m.material.opacity = 0.45 + 0.45 * (0.5 + 0.5 * Math.sin(t + i)); });
     if (this.fx) this.fx = this.fx.filter((p) => {
       p.userData.life -= dt; const a = p.geometry.attributes.position, v = p.userData.vel;
@@ -589,6 +626,7 @@ export class HoleGame {
     let idx = -1;
     this.goals.forEach((g, i) => {
       if (g.name !== it.name || g.got >= g.need) return;
+      if (!!g.boss !== !!it.boss) return;
       if (!!g.big === it.big) idx = i;
     });
     return idx;
@@ -663,7 +701,7 @@ export class HoleGame {
     const timeBonus = win ? Math.round(this.timeLeft * 2) : 0;
     const winBonus = win ? 40 + this.level.n * 8 : 0;
     setTimeout(() => this.events.onEnd({
-      win, stars, level: this.level.n, coins: this.coinsEarned, timeBonus, winBonus,
+      win, stars, level: this.level.n, kind: this.level.kind, coins: this.coinsEarned, timeBonus, winBonus: winBonus * (this.level.kind === 'boss' ? 3 : this.level.kind === 'hard' ? 2 : 1),
       swallowed: this.swallowed, canExtend: !win && !this.extraUsed, reason: reason || (win ? 'win' : 'time'),
     }), win ? 700 : reason === 'bomb' ? 1100 : 300);
   }

@@ -300,3 +300,13 @@ body.xmas .round-btn::before { top: -5px; left: 18%; right: 18%; height: 9px; }
 .bag-mini { margin: 6px auto 0; width: max-content; max-width: 100%; padding: 4px 12px; border-radius: 12px; background: #fff3c4; color: #8a5a00; font-weight: 800; font-size: 14px; border: 2px solid #ffcb2f; }
 .bag-mini.lost { background: #ffe8ec; color: #c4133a; border-color: #ffc2cd; }
 .streak-chip { font-size: 18px; background: rgba(255,255,255,.25); border-radius: 10px; padding: 0 6px; margin-inline-start: 6px; }
+
+/* ---------- hard & boss levels */
+.kind-tag { display: inline-block; margin: 2px auto 4px; padding: 2px 14px; border-radius: 12px; font-weight: 800; font-size: 16px; color: #fff; }
+.kind-tag.hard { background: linear-gradient(#b05cf0, #6a2fd6); border: 2px solid #3a1580; }
+.kind-tag.boss { background: linear-gradient(#ff5a5a, #c4133a); border: 2px solid #7a0a20; }
+.big-tag.boss { background: #ffc21f; font-size: 12px; }
+.node.hard { background: linear-gradient(#c58cff, #6a2fd6); }
+.node.boss { background: linear-gradient(#ff7a7a, #c4133a); width: 76px; height: 76px; }
+.node.cur.hard, .node.cur.boss { background: linear-gradient(#ffe36b, #ff9a2f); }
+.node .nk { position: absolute; top: -14px; font-size: 22px; }

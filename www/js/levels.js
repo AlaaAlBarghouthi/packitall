@@ -30,6 +30,24 @@ export const THEMES = [
     medium: [['bench', 0.9], ['lamp', 0.8], ['tree', 0.9], ['car', 0.85], ['taxi', 0.85], ['trafficlight', 0.8], ['bike', 0.9]],
     large: [['bus', 1.0], ['house', 1.2], ['car', 2.0], ['house', 1.7], ['trafficlight', 1.8]], decal: 'city', movers: ['car', 'taxi', 'bike', 'bus'],
   },
+  {
+    id: 'beach', floor: ['#ffd99a', '#fff0cc'], sky: '#9fe0ff', fog: '#cdefff',
+    small: [['shell', 0.85], ['starfish', 0.85], ['juice', 0.8], ['lifebuoy', 0.75]],
+    medium: [['bucket', 1.0], ['crab', 1.0], ['ball', 1.0], ['surfboard', 0.8], ['sandcastle', 0.7]],
+    large: [['sandcastle', 1.8], ['parasol', 1.7], ['palm', 1.3], ['boat', 1.2]], decal: 'beach', movers: ['crab', 'ball'],
+  },
+  {
+    id: 'farm', floor: ['#b9e08a', '#d8f0b0'], sky: '#bfe6ff', fog: '#dff3e2',
+    small: [['egg', 0.9], ['carrot', 0.85], ['corn', 0.85], ['apple', 0.8]],
+    medium: [['chicken', 1.0], ['pumpkin', 1.0], ['milkcan', 0.9], ['haybale', 0.8]],
+    large: [['cow', 1.4], ['tractor', 1.4], ['barn', 1.4], ['haybale', 2.0]], decal: 'farm', movers: ['chicken'],
+  },
+  {
+    id: 'space', floor: ['#3a3778', '#4b48a0'], sky: '#1d1a45', fog: '#2a2760',
+    small: [['star', 0.8], ['meteor', 0.75], ['planet', 0.7], ['alien', 0.75]],
+    medium: [['ufo', 1.0], ['astronaut', 1.0], ['satellite', 0.9], ['rocket', 0.9]],
+    large: [['planet', 2.4], ['rover', 1.6], ['rocket', 2.4], ['ufo', 2.4]], decal: 'space', movers: ['ufo', 'alien', 'rover'],
+  },
 ];
 
 export const HAZARD_LEVEL = 5;
@@ -53,7 +71,8 @@ export function generateLevel(n, opts = {}) {
   const d = Math.min(n, 30);
   const W = 20 + d * 0.45;     // world half-extent x
   const H = W * 1.45;          // world half-extent z
-  const time = Math.min(150, 75 + d * 2.5);
+  const kind = n >= 10 && n % 10 === 0 ? 'boss' : n >= 5 && n % 5 === 0 ? 'hard' : 'normal';
+  const time = kind === 'boss' ? Math.min(170, 120 + d * 1.5) : Math.min(150, 75 + d * 2.5);
 
   const pick = (arr) => arr[Math.floor(R() * arr.length)];
   const shuffled = (arr) => arr.slice().sort(() => R() - 0.5);
@@ -63,8 +82,10 @@ export function generateLevel(n, opts = {}) {
   const pool = shuffled([...theme.small, ...theme.medium]);
   const goalTypes = [];
   for (const [name] of pool) { if (!goalTypes.includes(name)) goalTypes.push(name); if (goalTypes.length >= goalCount) break; }
-  const goals = goalTypes.map((name, i) => ({ name, need: Math.round(8 + d * 1.1 + (i === 0 ? 4 : 0) - i * 2), got: 0 }));
-  if (n >= 4) {
+  const hardK = kind === 'hard' ? 1.3 : 1;
+  let goals = goalTypes.map((name, i) => ({ name, need: Math.round((8 + d * 1.1 + (i === 0 ? 4 : 0) - i * 2) * hardK), got: 0 }));
+  if (kind === 'boss') goals = [{ name: theme.large[0][0], need: 1, got: 0, big: true, boss: true }];
+  else if (n >= 4) {
     const big = pick(theme.large);
     goals.push({ name: big[0], need: Math.min(4, 1 + Math.floor(d / 8)), got: 0, big: true, scale: big[1] });
   }
@@ -85,7 +106,7 @@ export function generateLevel(n, opts = {}) {
     return true;
   };
 
-  return { n, theme, W, H, time, goals, items, place, R, pick, shuffled, opts };
+  return { n, kind, theme, W, H, time, goals, items, place, R, pick, shuffled, opts };
 }
 
 // Fill the level with items. Needs footprint lookup (from models) -> done here to keep levels.js data-only
@@ -93,8 +114,17 @@ export function populate(level, footOf) {
   const { theme, W, H, goals, place, R, pick } = level;
   const d = Math.min(level.n, 30);
 
+  // 0) boss: one giant item near the middle of the map
+  for (const g of goals) {
+    if (!g.boss) continue;
+    const f = footOf(g.name); g.scale = 4.0 / f;
+    place(g.name, g.scale, 0, -level.H * 0.15, f, true);
+    level.items[level.items.length - 1].boss = true;
+    g.available = 1;
+  }
   // 1) goal items, guaranteed amount * 1.35
   for (const g of goals) {
+    if (g.boss) continue;
     const tier = [...theme.small, ...theme.medium, ...theme.large].find(t => t[0] === g.name && (!g.big || t[1] === g.scale));
     const scale = g.big ? g.scale : (tier ? tier[1] : 1);
     g.scale = scale;
@@ -137,7 +167,7 @@ export function populate(level, footOf) {
   // 2b) hazards: bombs from level 5 (more every 3 levels)
   level.hazards = 0;
   if (level.n >= HAZARD_LEVEL) {
-    const want = Math.min(10, 3 + Math.floor((level.n - HAZARD_LEVEL) / 4));
+    const want = Math.max(2, Math.min(12, 3 + Math.floor((level.n - HAZARD_LEVEL) / 4) + (level.kind === 'hard' ? 2 : level.kind === 'boss' ? -1 : 0)));
     for (let i = 0, tries = 0; i < want && tries < 600; tries++) {
       const sc = [1.2, 1.5, 1.8, 2.2][i % 4];
       const x = (R() * 2 - 1) * (W - 3), z = (R() * 2 - 1) * (H - 3);
