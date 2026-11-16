@@ -32,14 +32,22 @@ export const THEMES = [
   },
 ];
 
+// Holiday season world (used for every 2nd level while the event is on)
+export const XMAS_THEME = {
+  id: 'xmas', floor: ['#d3e9ff', '#ffffff'], sky: '#cfe6ff', fog: '#e6f2ff', snow: true,
+  small: [['candycane', 0.8], ['ornament', 0.75], ['bell', 0.8], ['cookie', 0.8]],
+  medium: [['santahat', 0.95], ['stocking', 1.0], ['gingerbread', 1.0], ['present_green', 1.0], ['present_white', 1.0]],
+  large: [['xtree', 1.5], ['snowman', 2.0], ['sled', 1.4], ['gingerhouse', 1.3]],
+};
+
 function rng(seed) {
   let s = seed >>> 0;
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
 }
 
-export function generateLevel(n) {
+export function generateLevel(n, opts = {}) {
   const R = rng(n * 7919 + 13);
-  const theme = THEMES[(n - 1) % THEMES.length];
+  const theme = (opts.xmas && n > 1 && n % 2 === 0) ? XMAS_THEME : THEMES[(n - 1) % THEMES.length];
   const d = Math.min(n, 30);
   const W = 22 + d * 0.5;      // world half-extent x
   const H = W * 1.45;          // world half-extent z
@@ -75,7 +83,7 @@ export function generateLevel(n) {
     return true;
   };
 
-  return { n, theme, W, H, time, goals, items, place, R, pick, shuffled };
+  return { n, theme, W, H, time, goals, items, place, R, pick, shuffled, opts };
 }
 
 // Fill the level with items. Needs footprint lookup (from models) -> done here to keep levels.js data-only

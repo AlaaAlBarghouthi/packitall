@@ -12,6 +12,7 @@ import { THEMES } from './levels.js';
 import { sfx, haptic, unlockAudio } from './audio.js';
 import { HoleGame } from './game.js';
 import { CityScene, buildingIcon } from './city.js';
+import { xmasActive, xmasEndsAt } from './event.js';
 import { initAds, canShow, usesLeft, showRewarded, showPrivacyOptionsButton, openPrivacyOptions } from './ads.js';
 
 // "Watch an ad" button (only rendered when an ad can be shown)
@@ -46,6 +47,7 @@ function icons(root = document) {
 function texts(root = document) { root.querySelectorAll('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); }); }
 
 // ---------------------------------------------------------------- materials & perks helpers
+const visMats = () => MAT_ORDER.filter((m) => m !== 'festive' || xmasActive() || (S.mats.festive || 0) > 0);
 function matChips(cost, showHave = true) {
   return Object.keys(cost).map((m) => {
     const ok = (S.mats[m] || 0) >= cost[m];
@@ -116,7 +118,11 @@ function renderMap() {
   el.innerHTML = html; icons(el);
   const curEl = el.querySelector('.node.cur'); if (curEl) curEl.scrollIntoView({ block: 'center' });
   const th = THEMES[(cur - 1) % THEMES.length];
-  $('#play-theme').textContent = t('theme_' + th.id);
+  const xm = xmasActive() && cur > 1 && cur % 2 === 0;
+  $('#play-theme').textContent = t('theme_' + (xm ? 'xmas' : th.id));
+  const bn = $('#xmas-banner');
+  if (xmasActive()) { const days = Math.max(1, Math.ceil((xmasEndsAt() - Date.now()) / 86400000)); bn.innerHTML = `<b>🎄 ${t('xmasTitle')}</b><span>${t('xmasBanner')}</span><small>${t('xmasEnds', { n: days })}</small>`; bn.classList.remove('hidden'); }
+  else bn.classList.add('hidden');
   $('#btn-play').innerHTML = `${t('level')} ${cur}`;
 }
 
@@ -130,7 +136,7 @@ function renderCityHud() {
   const btn = $('#btn-collect');
   btn.innerHTML = `<i data-i="coin"></i> ${t('collect')} ${pending > 0 ? fmt(pending) : ''}`; icons(btn);
   btn.disabled = pending <= 0;
-  $('#city-mats').innerHTML = MAT_ORDER.map((m) => `<span class="mchip">${MATS[m].icon} ${fmt(S.mats[m] || 0)}</span>`).join('');
+  $('#city-mats').innerHTML = visMats().map((m) => `<span class="mchip">${MATS[m].icon} ${fmt(S.mats[m] || 0)}</span>`).join('');
   $('#city-hint').classList.toggle('hidden', !!(S.tut.city || S.plots.some((p) => p.b)));
 }
 function openBonuses() {
@@ -163,6 +169,29 @@ function renderTasks() {
   });
 }
 
+const SKIN_LIST = [{ id: 'classic', name: 'skinClassic', css: 'radial-gradient(circle,#05010d 52%,#c58cff 54%,#c58cff 62%,rgba(190,110,255,.35) 66%,transparent 74%)' },
+  { id: 'candy', name: 'skinCandy', css: 'radial-gradient(circle,#05010d 52%,transparent 53%),repeating-conic-gradient(#ff2f4e 0 15deg,#fff 15deg 30deg)', event: true }];
+function skinCards() {
+  return SKIN_LIST.map((k) => {
+    const own = S.skins.includes(k.id), using = S.skin === k.id;
+    return `<div class="card shop-item"><div class="skin-ico" style="background:${k.css}"></div><b>${t(k.name)}</b>
+      ${own ? `<button class="btn ${using ? 'btn-gray' : 'btn-green'}" data-skin="${k.id}" ${using ? 'disabled' : ''}>${using ? t('inUse') : t('use')}</button>` : `<p>🎄 ${t('eventOnly')}</p>`}</div>`;
+  }).join('');
+}
+function holidayGift(after) {
+  const yr = String(new Date().getFullYear() + (new Date().getMonth() === 0 ? -1 : 0));
+  if (!xmasActive() || S.xmasGift === yr) return after && after();
+  const card = modal(`<div class="big-ico" style="font-size:72px;line-height:90px">🎅</div><h2>${t('xmasGiftTitle')}</h2><p>${t('xmasGiftText')}</p>
+    <div class="skin-ico" style="margin:6px auto;background:${SKIN_LIST[1].css}"></div><b>${t('skinCandy')}</b>
+    <div class="mrow" style="justify-content:center;margin:8px 0"><span class="mchip ok">🪙 +300</span><span class="mchip ok">💎 +10</span><span class="mchip ok">🎄 +20</span></div>
+    <div class="actions"><button class="btn btn-green btn-big" id="xg-open">${t('open')} 🎁</button></div>`, false);
+  card.querySelector('#xg-open').onclick = () => {
+    S.xmasGift = yr; if (!S.skins.includes('candy')) S.skins.push('candy'); S.skin = 'candy';
+    S.coins += 300; S.gems += 10; S.mats.festive = (S.mats.festive || 0) + 20; St.save();
+    sfx.win(); haptic('heavy'); closeModal(true); refreshTop(); if (after) after();
+  };
+}
+
 function renderShop() {
   const el = $('#shop-list');
   const giftReady = Date.now() - S.giftTs >= giftCooldown();
@@ -180,6 +209,8 @@ function renderShop() {
       <div class="grow"><b style="font-size:17px">${t('adBoostTitle')}</b><br><small style="color:#6b5a8f">${t('adBoostDesc')}</small></div>
       ${adBtn('freeboost', t('adWatch'), 'btn-adboost')}
     </div>` : ''}
+    <div class="sec-title">${t('skins')}</div>
+    <div class="shop-grid">${skinCards()}</div>
     <div class="sec-title">${t('boosters')}</div>
     <div class="shop-grid">${Object.keys(BOOSTERS).map((k) => `
       <div class="card shop-item">
@@ -208,6 +239,7 @@ function renderShop() {
   });
   const ag = $('#btn-adgift'); if (ag) ag.onclick = () => watchAd('gift', ag, () => { S.giftTs = 0; S.coins += 100; S.gems += 2; S.giftTs = Date.now(); St.save(); sfx.win(); renderShop(); });
   const abo = $('#btn-adboost'); if (abo) abo.onclick = () => watchAd('freeboost', abo, () => { const ks = Object.keys(BOOSTERS); const k = ks[Math.floor(Math.random() * ks.length)]; S.boosters[k] = (S.boosters[k] || 0) + 1; St.save(); sfx.coin(); toast('+1 ' + t(k)); renderShop(); });
+  el.querySelectorAll('[data-skin]').forEach((b) => b.onclick = () => { S.skin = b.dataset.skin; St.save(); sfx.click(); renderShop(); });
   const g = $('#btn-gift'); if (g && giftReady) g.onclick = () => { S.giftTs = Date.now(); S.coins += 100; S.gems += 2; St.save(); sfx.win(); renderShop(); };
   $('#btn-refill').onclick = () => { if (St.spendGems(REFILL_GEMS)) { St.refillHearts(); sfx.goal(); renderShop(); } };
   $('#btn-exchange').onclick = () => { if (St.spendGems(10)) { St.addCoins(500); sfx.coin(); renderShop(); } };
@@ -249,7 +281,7 @@ function onPlotTap(i) {
 
 function openBuildMenu(i) {
   S.tut.city = true; St.save();
-  const list = BUILDING_ORDER.map((k) => {
+  const list = BUILDING_ORDER.filter((k) => !BUILDINGS[k].event || xmasActive() || S.plots.some((p) => p.b === k)).map((k) => {
     const d = BUILDINGS[k]; const lockd = S.level < d.unlock; const mc = matCost(k, 1); const afford = S.coins >= d.cost && St.hasMats(mc);
     return `<div class="bld ${lockd ? 'locked' : ''}">
       <div class="bi" style="background-image:url(${buildingIcon(k)})"></div>
@@ -258,7 +290,7 @@ function openBuildMenu(i) {
       ${lockd ? '' : `<button class="btn ${afford ? 'btn-green' : 'btn-gray'}" data-b="${k}" ${afford ? '' : 'disabled'}><i data-i="coin"></i>${fmt(d.cost)}</button>`}
     </div>`;
   }).join('');
-  const card = modal(`<h2>${t('build')}</h2><p>${t('chooseBuilding')}</p><div class="mrow" style="justify-content:center;margin-bottom:8px">${MAT_ORDER.map((m) => `<span class="mchip">${MATS[m].icon} ${fmt(S.mats[m] || 0)}</span>`).join('')}</div><div class="bld-list">${list}</div>
+  const card = modal(`<h2>${t('build')}</h2><p>${t('chooseBuilding')}</p><div class="mrow" style="justify-content:center;margin-bottom:8px">${visMats().map((m) => `<span class="mchip">${MATS[m].icon} ${fmt(S.mats[m] || 0)}</span>`).join('')}</div><div class="bld-list">${list}</div>
     <div class="actions"><button class="btn btn-gray" id="m-close">${t('close')}</button></div>`);
   card.querySelector('#m-close').onclick = () => { sfx.click(); closeModal(); };
   card.querySelectorAll('[data-b]').forEach((b) => b.onclick = () => {
@@ -283,7 +315,7 @@ function startLevel() {
   ['#topbar', '#tabs', '#nav'].forEach((s) => $(s).classList.add('hidden'));
   $('#game-hud').classList.remove('hidden');
   city.active = false;
-  game.start(S.level, S.boosters, St.perks(), { tutorial: !S.tut.move && S.level === 1 });
+  game.start(S.level, S.boosters, St.perks(), { tutorial: !S.tut.move && S.level === 1, xmas: xmasActive(), skin: S.skin });
 }
 
 function backToMenu(toTab = 'play') {
@@ -565,8 +597,9 @@ async function boot() {
   requestAnimationFrame(loop);
 
   setTimeout(() => { $('#loading').classList.add('out'); const SS = plugin('SplashScreen'); if (SS) SS.hide().catch(() => {}); }, 300);
+  document.body.classList.toggle('xmas', xmasActive());
   if (S.tutorial) setTimeout(welcome, 500);
-  else setTimeout(dailyStuff, 600);
+  else setTimeout(() => holidayGift(dailyStuff), 600);
   setTimeout(() => { initAds(); }, 1500);
 }
 

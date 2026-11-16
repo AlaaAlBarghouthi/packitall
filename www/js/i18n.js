@@ -40,7 +40,10 @@ const STR = {
     pk_growS: 'التكبير +{n} ث', pk_tbPct: '+{n}% مكافأة الوقت', noBonuses: 'ابنِ مباني لتاخد قوى باللعب!',
     login: 'مكافأة الدخول اليومية', day: 'يوم', comeTomorrow: 'ارجع بكرا للمكافأة الجاية!', toyGift: 'محل الألعاب عطاك:', gemBonus: 'جوهرة من البوتيك!',
     tut1: 'اسحب إصبعك لتحرّك الثقب 👆', tut2: 'ابلع الأغراض الصغيرة! 🕳️', tut3: 'كل ما تبلع بتكبر... الأغراض الكبيرة بدها ثقب أكبر', tut4: 'خلّص الأهداف قبل ما يخلص الوقت! 🎯',
-    cityHint: 'كبسة على الأرض لتبني أول بيت 🏠', matsHint: 'كل شي بتبلعه بيصير مواد بناء للمدينة!', ready: 'جاهز؟', go: 'يلا!', reached: 'وصلت',
+    cityHint: 'كبسة على الأرض لتبني أول بيت 🏠',
+    theme_xmas: 'عالم العيد 🎄', mat_festive: 'زينة العيد', bld_workshop: 'ورشة بابا نويل', pk_festivePct: '+{n}% زينة 🎄 من مراحل العيد',
+    xmasTitle: 'موسم الأعياد', xmasBanner: 'مراحل العيد كل مرحلتين! ❄️', xmasEnds: 'بيخلص بعد {n} يوم', xmasGiftTitle: 'عيد ميلاد مجيد! 🎅',
+    xmasGiftText: 'هديتك بمناسبة الأعياد:', skinCandy: 'ثقب عصا الحلوى', skinClassic: 'الثقب الكلاسيكي', skins: 'أشكال الثقب', use: 'استعمل', inUse: 'مستعمل', eventOnly: 'بس بموسم الأعياد', open: 'افتح', matsHint: 'كل شي بتبلعه بيصير مواد بناء للمدينة!', ready: 'جاهز؟', go: 'يلا!', reached: 'وصلت',
   },
   en: {
     play: 'Play', city: 'City', tasks: 'Tasks', shop: 'Shop',
@@ -82,7 +85,10 @@ const STR = {
     pk_growS: 'Grow +{n}s', pk_tbPct: '+{n}% time bonus', noBonuses: 'Build to unlock powers in levels!',
     login: 'Daily login reward', day: 'Day', comeTomorrow: 'Come back tomorrow for the next reward!', toyGift: 'The toy store gave you:', gemBonus: 'A gem from the boutique!',
     tut1: 'Drag your finger to move the hole 👆', tut2: 'Swallow the small items! 🕳️', tut3: 'Swallowing makes you grow... big items need a bigger hole', tut4: 'Finish the goals before time runs out! 🎯',
-    cityHint: 'Tap the plot to build your first house 🏠', matsHint: 'Everything you swallow becomes building material!', ready: 'Ready?', go: 'Go!', reached: 'Reached',
+    cityHint: 'Tap the plot to build your first house 🏠',
+    theme_xmas: 'Holiday World 🎄', mat_festive: 'Festive', bld_workshop: "Santa's Workshop", pk_festivePct: '+{n}% 🎄 from holiday levels',
+    xmasTitle: 'Holiday Season', xmasBanner: 'Holiday levels every 2nd level! ❄️', xmasEnds: 'Ends in {n} days', xmasGiftTitle: 'Merry Christmas! 🎅',
+    xmasGiftText: 'Your holiday gift:', skinCandy: 'Candy Cane Hole', skinClassic: 'Classic Hole', skins: 'Hole skins', use: 'Use', inUse: 'In use', eventOnly: 'Holiday season only', open: 'Open', matsHint: 'Everything you swallow becomes building material!', ready: 'Ready?', go: 'Go!', reached: 'Reached',
   },
 };
 

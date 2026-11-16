@@ -257,3 +257,15 @@ html[dir=ltr] .bld .bt small { justify-content: flex-start; }
 .lday.done { opacity: .5; }
 .lday.today { background: linear-gradient(#ffe36b, #ffb21f); border-color: #9a5a00; color: #5a2d00; transform: scale(1.06); }
 .lday.d7 { grid-column: span 2; }
+
+/* ---------- holiday season */
+.xmas-banner { position: absolute; left: 12px; right: 12px; top: calc(var(--st) + 62px); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 6px 12px; border-radius: 18px;
+  background: linear-gradient(135deg, #e8323e, #b8142a); border: 3px solid #fff; box-shadow: 0 4px 0 rgba(120,10,30,.5); color: #fff; text-align: center; }
+.xmas-banner b { font-size: 18px; } .xmas-banner span { font-size: 14px; font-weight: 700; } .xmas-banner small { font-size: 11px; opacity: .9; }
+body.xmas .map-scroll { top: calc(var(--st) + 140px); }
+body.xmas #nav button::before, body.xmas .btn-big::before, body.xmas .round-btn::before {
+  content: ''; position: absolute; top: -7px; left: 8%; right: 8%; height: 12px; border-radius: 10px 10px 8px 8px; background: #fff;
+  box-shadow: 0 2px 0 rgba(0,0,0,.08); pointer-events: none; }
+body.xmas .btn-big, body.xmas .round-btn { position: relative; }
+body.xmas .round-btn::before { top: -5px; left: 18%; right: 18%; height: 9px; }
+.skin-ico { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #3a1580; }

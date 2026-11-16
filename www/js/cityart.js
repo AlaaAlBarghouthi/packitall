@@ -634,6 +634,38 @@ B.castle = (lv) => {
   return k;
 };
 
+B.workshop = (lv) => {
+  const k = new K(), w = 3.4, d = 2.8, fh = 1.6;
+  base(k, w, d);
+  wallBox(k, w, fh, d, '#b9774a', 'wood', 0.2);
+  if (lv >= 2) wallBox(k, w - 0.1, fh * 0.85, d - 0.1, '#c98a5a', 'wood', 0.2 + fh);
+  const top = 0.2 + fh * (lv >= 2 ? 1.85 : 1) + 0.04;
+  faces(k, w, d, (k, fw, side) => {
+    if (side === 'f') {
+      door(k, 0, 0.8, 1.15, { color: '#c0392b', frame: '#ffffff' });
+      k.tor(0.22, 0.07, '#2fae55', 'base', [0, 1.62, 0.12], [0, 0, 0], Math.PI * 2, 20); k.sph(0.07, '#e8323e', 'base', [0, 1.42, 0.16], [1, 1, 1], 8);
+      win(k, -1.15, 0.95, 0.55, 0.65, { frame: '#ffffff', shutter: '#2fae55' }); win(k, 1.15, 0.95, 0.55, 0.65, { frame: '#ffffff', shutter: '#2fae55' });
+      if (lv >= 2) rowWindows(k, fw, 0.2 + fh + 0.7, 2, { w: 0.5, h: 0.6, frame: '#ffffff' });
+      // candy-cane pillars
+      for (const x of [-0.75, 0.75]) for (let i = 0; i < 7; i++) k.cyl(0.07, 0.07, 0.2, i % 2 ? '#ffffff' : '#e8323e', 'base', [x, 0.3 + i * 0.2, 0.55], [0, 0, 0], 10);
+    } else rowWindows(k, fw, 0.95, 2, { w: 0.5, h: 0.6, frame: '#ffffff' });
+  }, 'frl');
+  gableRoof(k, w, d, top, 1.2, '#d6453b');
+  // snow on the roof ridge + eaves
+  k.rbox(w + 0.7, 0.16, 0.5, 0.08, '#ffffff', 'base', [0, top + 1.2, 0]);
+  for (const sgn of [1, -1]) k.rbox(w + 0.7, 0.12, 0.35, 0.06, '#ffffff', 'base', [0, top + 0.12, sgn * (d / 2 + 0.25)]);
+  chimney(k, 1.0, top + 0.3, -0.4, 1.0); k.rbox(0.55, 0.12, 0.55, 0.05, '#ffffff', 'base', [1.0, top + 1.34, -0.4]);
+  // string lights along the eave
+  const bulbs = ['#ff3b4e', '#ffd23f', '#4cd07d', '#3d8bff'];
+  for (let i = 0; i < 13; i++) k.sph(0.07, bulbs[i % 4], 'lit', [-w / 2 - 0.2 + i * (w + 0.4) / 12, top - 0.02 - Math.sin(i / 12 * Math.PI * 4) * 0.04, d / 2 + 0.42], [1, 1, 1], 6);
+  // presents pile
+  const pc = [['#2fae55', '#e8323e'], ['#e8323e', '#ffd23f'], ['#3d8bff', '#ffffff'], ['#ffd23f', '#b05cf0']];
+  pc.forEach(([c, r], i) => { const x = 1.6 - (i % 2) * 0.5, z = d / 2 + 0.9 - Math.floor(i / 2) * 0.1, sz = 0.42 - i * 0.04, y = i >= 2 ? 0.45 : 0.21;
+    k.rbox(sz, sz, sz, 0.04, c, 'base', [x - (i >= 2 ? 0.25 : 0), y + 0.02, z]); k.box(0.07, sz + 0.02, sz + 0.02, r, 'base', [x - (i >= 2 ? 0.25 : 0), y + 0.02, z]); });
+  if (lv >= 3) { k.cone(0.55, 1.4, '#249a48', 'base', [-1.7, 0.95, d / 2 + 0.9], [0, 0, 0], 12); k.add(new THREE.OctahedronGeometry(0.14, 0), '#ffd23f', 'lit', [-1.7, 1.75, d / 2 + 0.9], [0, 0, 0], [1, 1, 0.5]); }
+  return k;
+};
+
 const cache = new Map();
 export function buildingMesh(type, lv) {
   ensureArt();

@@ -20,7 +20,8 @@ function fresh() {
     giftTs: 0,
     stats: { swallowed: 0, levels: 0, built: 0 },
     tutorial: true,
-    mats: { gift: 0, sweet: 0, toy: 0, nature: 0, city: 0 },
+    mats: { gift: 0, sweet: 0, toy: 0, nature: 0, city: 0, festive: 0 },
+    skin: 'classic', skins: ['classic'], xmasGift: '',
     login: { last: '', streak: 0 },
     toyDay: '',
     tut: { move: false, city: false },
@@ -46,6 +47,7 @@ export async function load() {
       S.mats = Object.assign(fresh().mats, d.mats || {});
       S.login = Object.assign(fresh().login, d.login || {});
       S.tut = Object.assign(fresh().tut, d.tut || {});
+      if (!Array.isArray(S.skins)) S.skins = ['classic'];
       while (S.plots.length < PLOT_UNLOCK.length) S.plots.push({ b: null, lv: 0, ts: 0 });
     } catch (e) { S = fresh(); }
   }
@@ -106,7 +108,7 @@ export function refillHearts() { S.hearts = maxHearts(); S.heartTs = Date.now();
 
 // ---- perks from buildings (highest level of each type counts)
 export function perks() {
-  const out = { coinPct: 0, regenMin: 0, magnetS: 0, timeS: 0, sizePct: 0, gemPct: 0, freezeS: 0, dailyBoost: 0, tornadoS: 0, maxHearts: 0, capH: 0, giftH: 0, growS: 0, tbPct: 0 };
+  const out = { coinPct: 0, regenMin: 0, magnetS: 0, timeS: 0, sizePct: 0, gemPct: 0, freezeS: 0, dailyBoost: 0, tornadoS: 0, maxHearts: 0, capH: 0, giftH: 0, growS: 0, tbPct: 0, festivePct: 0 };
   const best = {};
   S.plots.forEach((p) => { if (p.b) best[p.b] = Math.max(best[p.b] || 0, p.lv); });
   for (const b in best) { const pk = PERKS[b]; if (pk) out[pk.key] += pk.per * best[b]; }

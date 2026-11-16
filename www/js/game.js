@@ -24,14 +24,26 @@ function checkerTexture(a, b) {
   return tx;
 }
 
-function glowTexture() {
+// ---- hole skins
+export const SKINS = {
+  classic: { rim: 0xc58cff, glow: [190, 110, 255] },
+  candy:   { rim: 'stripes', glow: [255, 90, 110], glow2: [120, 255, 160] },
+};
+function stripeTexture() {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 32;
+  const g = c.getContext('2d');
+  for (let i = 0; i < 24; i++) { g.fillStyle = i % 2 ? '#ffffff' : '#ff2f4e'; g.beginPath(); g.moveTo(i * 21.33, 0); g.lineTo(i * 21.33 + 21.33, 0); g.lineTo(i * 21.33 + 35, 32); g.lineTo(i * 21.33 + 13.67, 32); g.fill(); }
+  const tx = new THREE.CanvasTexture(c); tx.wrapS = THREE.RepeatWrapping; tx.colorSpace = THREE.SRGBColorSpace; return tx;
+}
+function glowTexture(rgb = [190, 110, 255], rgb2) {
   const c = document.createElement('canvas'); c.width = c.height = 256;
   const g = c.getContext('2d');
   const grd = g.createRadialGradient(128, 128, 60, 128, 128, 128);
-  grd.addColorStop(0, 'rgba(190,110,255,0.0)');
-  grd.addColorStop(0.42, 'rgba(190,110,255,0.75)');
-  grd.addColorStop(0.55, 'rgba(230,170,255,0.45)');
-  grd.addColorStop(1, 'rgba(190,110,255,0)');
+  const [r, gg, bb] = rgb, c2 = rgb2 || [Math.min(255, r + 40), Math.min(255, gg + 60), Math.min(255, bb + 20)];
+  grd.addColorStop(0, `rgba(${r},${gg},${bb},0.0)`);
+  grd.addColorStop(0.42, `rgba(${r},${gg},${bb},0.75)`);
+  grd.addColorStop(0.55, `rgba(${c2[0]},${c2[1]},${c2[2]},0.5)`);
+  grd.addColorStop(1, `rgba(${r},${gg},${bb},0)`);
   g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
   const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
 }
@@ -53,7 +65,7 @@ export class HoleGame {
   start(n, boosters, perks = {}, opts = {}) {
     this.perks = perks; this.opts = opts;
     this.clear();
-    const lvl = populate(generateLevel(n), (name) => getModel(name).foot);
+    const lvl = populate(generateLevel(n, { xmas: !!opts.xmas }), (name) => getModel(name).foot);
     this.level = lvl;
     this.boostersInv = boosters; // reference to save.boosters (mutated by main via callback)
     lvl.time += perks.timeS || 0;
@@ -101,7 +113,7 @@ export class HoleGame {
 
     // out-of-bounds tint + border fence
     const borderMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
-    const accent = new THREE.MeshStandardMaterial({ color: 0xb06bff, roughness: 0.4 });
+    const accent = new THREE.MeshStandardMaterial({ color: th.snow ? 0xe8323e : 0xb06bff, roughness: 0.4 });
     const mkWall = (w, d, x, z) => {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.5, d), borderMat); m.position.set(x, 0.25, z); m.castShadow = true; m.receiveShadow = true; this.scene.add(m);
       const s = new THREE.Mesh(new THREE.BoxGeometry(w + 0.02, 0.12, d + 0.02), accent); s.position.set(x, 0.5, z); this.scene.add(s);
@@ -128,6 +140,20 @@ export class HoleGame {
     rim.rotation.x = Math.PI / 2; rim.position.y = 0.02; this.holeGroup.add(rim); this.rim = rim;
     const glow = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 2.9), new THREE.MeshBasicMaterial({ map: this.glowTex, transparent: true, depthWrite: false }));
     glow.rotation.x = -Math.PI / 2; glow.position.y = 0.03; this.holeGroup.add(glow); this.glow = glow;
+    // skin
+    const sk = SKINS[opts.skin] || SKINS.classic;
+    if (sk.rim === 'stripes') { rim.material.map = stripeTexture(); rim.material.color.set(0xffffff); rim.geometry.dispose(); rim.geometry = new THREE.TorusGeometry(1, 0.085, 12, 96); }
+    else rim.material.color.set(sk.rim);
+    if (opts.skin && opts.skin !== 'classic') { glow.material.map = glowTexture(sk.glow, sk.glow2); }
+    // falling snow in the holiday world
+    this.snow = null;
+    if (th.snow) {
+      const N = 700, pos = new Float32Array(N * 3);
+      for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - 0.5) * 60; pos[i * 3 + 1] = Math.random() * 30; pos[i * 3 + 2] = (Math.random() - 0.5) * 60; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      this.snow = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.22, transparent: true, opacity: 0.95, depthWrite: false }));
+      this.scene.add(this.snow);
+    }
     this.scene.add(this.holeGroup);
 
     // sparkles inside the hole
@@ -360,6 +386,7 @@ export class HoleGame {
 
     this._updateHole();
     this._items(dt, R);
+    this._snow(dt);
 
     if (this.comboT > 0) { this.comboT -= dt; if (this.comboT <= 0) this.combo = 0; }
     if (this.tooBigCooldown > 0) this.tooBigCooldown -= dt;
@@ -444,6 +471,15 @@ export class HoleGame {
     }
   }
 
+  _snow(dt) {
+    if (!this.snow) return;
+    const a = this.snow.geometry.attributes.position, p = a.array, cx = this.hole.x, cz = this.hole.z;
+    for (let i = 0; i < p.length; i += 3) {
+      p[i + 1] -= dt * (2.2 + (i % 7) * 0.25); p[i] += Math.sin(this.elapsed * 1.3 + i) * dt * 0.4;
+      if (p[i + 1] < 0) { p[i + 1] = 28 + Math.random() * 4; p[i] = cx + (Math.random() - 0.5) * 60; p[i + 2] = cz - 10 + (Math.random() - 0.5) * 60; }
+    }
+    a.needsUpdate = true;
+  }
   _isGoal(it) { return this._goalIndex(it) >= 0; }
   _goalIndex(it) {
     let idx = -1;
@@ -464,7 +500,7 @@ export class HoleGame {
     this.holeR = Math.min(MAX_R, Math.sqrt(this.area));
     // coins
     const mat = MATERIAL_OF[it.name];
-    if (mat) this.matsRun[mat] = (this.matsRun[mat] || 0) + materialGain(it.r);
+    if (mat) this.matsRun[mat] = (this.matsRun[mat] || 0) + Math.round(materialGain(it.r) * (mat === 'festive' ? 1 + ((this.perks || {}).festivePct || 0) / 100 : 1));
     const coins = Math.max(1, Math.round(it.r * it.r * 10));
     this.coinsEarned += coins;
     $('#run-coins').textContent = fmt(this.coinsEarned);

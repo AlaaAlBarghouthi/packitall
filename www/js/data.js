@@ -17,6 +17,7 @@ export const BUILDINGS = {
   tower:      { cost: 9000,  income: 750,  unlock: 20, pop: 40 },
   stadium:    { cost: 12000, income: 1000, unlock: 23, pop: 50 },
   castle:     { cost: 16000, income: 1400, unlock: 26, pop: 60 },
+  workshop:   { cost: 1200,  income: 110,  unlock: 2,  pop: 10, event: 'xmas' },
 };
 export const BUILDING_ORDER = Object.keys(BUILDINGS);
 
@@ -27,6 +28,7 @@ export const MATS = {
   toy:    { icon: '🧸' },
   nature: { icon: '🌳' },
   city:   { icon: '🧱' },
+  festive: { icon: '🎄' },
 };
 export const MAT_ORDER = Object.keys(MATS);
 export const MATERIAL_OF = {
@@ -34,6 +36,7 @@ export const MATERIAL_OF = {
   donut: 'sweet', cupcake: 'sweet', candy: 'sweet', lollipop: 'sweet', icecream: 'sweet', macaron: 'sweet', cake: 'sweet',
   teddy: 'toy', ball: 'toy', blocks: 'toy', duck: 'toy', rocket: 'toy', robot: 'toy', toycar: 'toy',
   watermelon: 'nature', sandwich: 'nature', juice: 'nature', basket: 'nature', apple: 'nature', tree: 'nature', bench: 'nature',
+  xtree: 'festive', snowman: 'festive', candycane: 'festive', gingerbread: 'festive', ornament: 'festive', stocking: 'festive', bell: 'festive', santahat: 'festive', present_green: 'festive', present_white: 'festive', cookie: 'festive', sled: 'festive', gingerhouse: 'festive',
   cone: 'city', hydrant: 'city', mailbox: 'city', lamp: 'city', car: 'city', taxi: 'city', bus: 'city', house: 'city',
 };
 export function materialGain(r) { return Math.max(1, Math.round(r * r * 3)); }
@@ -44,6 +47,7 @@ export const BUILD_MATS = {
   bakery: { sweet: 50, gift: 25 }, park: { nature: 35 }, boutique: { gift: 70 }, greenhouse: { nature: 60 },
   toystore: { toy: 70 }, cinema: { city: 60, toy: 40 }, mansion: { city: 90, gift: 40 }, hotel: { city: 110, sweet: 60 },
   ferris: { toy: 90, nature: 60 }, tower: { city: 160 }, stadium: { nature: 110, toy: 110 }, castle: { gift: 160, city: 160 },
+  workshop: { festive: 50 },
 };
 export function matCost(type, lv) {
   const base = BUILD_MATS[type] || {}, k = lv <= 1 ? 1 : 1.5 * (lv - 1) + 0.5, out = {};
@@ -69,8 +73,9 @@ export const PERKS = {
   tower:      { key: 'growS',    per: 3 },
   stadium:    { key: 'tbPct',    per: 25 },
   castle:     { key: 'coinPct',  per: 15 },
+  workshop:   { key: 'festivePct', per: 25 },
 };
-export const PERK_ICON = { coinPct: '🪙', regenMin: '❤️', magnetS: '🧲', timeS: '⏱️', sizePct: '🕳️', gemPct: '💎', freezeS: '❄️', dailyBoost: '🎁', tornadoS: '🌪️', maxHearts: '❤️', capH: '🏦', giftH: '🎀', growS: '↔️', tbPct: '⏱️' };
+export const PERK_ICON = { coinPct: '🪙', regenMin: '❤️', magnetS: '🧲', timeS: '⏱️', sizePct: '🕳️', gemPct: '💎', freezeS: '❄️', dailyBoost: '🎁', tornadoS: '🌪️', maxHearts: '❤️', capH: '🏦', giftH: '🎀', growS: '↔️', tbPct: '⏱️', festivePct: '🎄' };
 
 // ---- 7-day login calendar
 export const LOGIN_REWARDS = [

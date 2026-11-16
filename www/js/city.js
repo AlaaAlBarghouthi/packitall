@@ -4,6 +4,7 @@ import { getModel, itemMaterial, geoIcon } from './models.js';
 import { GRID, PLOT_UNLOCK } from './data.js';
 import { S, plotUnlocked, pendingIncome } from './state.js';
 import { ensureArt, TEX, K, buildingMesh, buildingParts, gardenFor, tree, bush, lamp, bench } from './cityart.js';
+import { xmasActive } from './event.js';
 
 const PLOT = 6, ROAD = 2.4;
 const SPAN = GRID * PLOT + (GRID + 1) * ROAD;
@@ -113,7 +114,8 @@ export class CityScene {
     // ----- island
     const ground = new K();
     ground.rbox(ISL + 0.8, 2.2, ISL + 0.8, 0.5, '#d7d0c6', 'stone', [0, -1.25, 0]);
-    ground.rbox(ISL, 0.6, ISL, 0.35, '#c8ef9e', 'grass', [0, -0.3, 0]);
+    this.xmas = xmasActive();
+    ground.rbox(ISL, 0.6, ISL, 0.35, this.xmas ? '#f2f8ff' : '#c8ef9e', 'grass', [0, -0.3, 0]);
     ground.rbox(SPAN + 0.6, 0.12, SPAN + 0.6, 0.06, '#a7aab8', 'asphalt', [0, 0.02, 0]);
     s.add(meshOf(ground.build(), false, true));
 
@@ -168,6 +170,7 @@ export class CityScene {
     for (const y of [0.55, 0.3]) { dec.box(ISL - 1.2, 0.08, 0.06, '#c98a4f', 'wood', [0, y, fz]); dec.box(0.06, 0.08, ISL - 1.2, '#c98a4f', 'wood', [fz, y, 0]); }
     s.add(meshOf(dec.build(), true, true));
     s.add(blobMesh(blobs));
+    if (this.xmas) this._holiday();
 
     // ----- boats
     this.boats = [];
@@ -197,6 +200,48 @@ export class CityScene {
     }
   }
 
+  _holiday() {
+    const s = this.scene;
+    // giant Christmas tree on the corner nearest the camera
+    const tr = new THREE.Mesh(getModel('xtree').geo, itemMaterial);
+    const c = SPAN / 2 + 3.6; tr.position.set(c, 0, c); tr.scale.setScalar(3.2); tr.castShadow = true; s.add(tr);
+    s.add(blobMesh([[c, c, 3.4]]));
+    // a few snowmen + presents
+    [[c - 5, c + 1.5, 1.3], [c + 1.5, c - 5.5, 1.1], [-c + 2, c + 0.5, 1.2]].forEach(([x, z, sc]) => {
+      const m = new THREE.Mesh(getModel('snowman').geo, itemMaterial); m.position.set(x, 0, z); m.scale.setScalar(sc); m.rotation.y = Math.PI / 4; m.castShadow = true; s.add(m);
+    });
+    // fairy lights along the shore fence (front two sides)
+    const k = new K(), fz = ISL / 2 - 0.25, cols = ['#ff3b4e', '#ffd23f', '#4cd07d', '#3d8bff', '#ff8fbf'];
+    let n = 0;
+    for (let t = -ISL / 2 + 0.6; t <= ISL / 2 - 0.6; t += 0.7, n++) {
+      const y = 0.68 - Math.abs(Math.sin(n * Math.PI / 2)) * 0.12;
+      k.sph(0.09, cols[n % 5], 'lit', [t, y, fz + 0.05], [1, 1, 1], 6); k.sph(0.09, cols[(n + 2) % 5], 'lit', [fz + 0.05, y, t], [1, 1, 1], 6);
+    }
+    s.add(meshOf(k.build(), false, false));
+    // falling snow over the island
+    const N = 1600, pos = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - 0.5) * (ISL + 20); pos[i * 3 + 1] = Math.random() * 40; pos[i * 3 + 2] = (Math.random() - 0.5) * (ISL + 20); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    this.snow = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.35, transparent: true, opacity: 0.95, depthWrite: false }));
+    s.add(this.snow);
+    // Santa's sleigh flying around the city
+    const sl = new THREE.Group();
+    const sled = new THREE.Mesh(getModel('sled').geo, itemMaterial); sled.scale.setScalar(1.1); sl.add(sled);
+    const rk = new K();
+    for (let i = 0; i < 2; i++) {
+      const x = 3.3 + i * 1.7;
+      for (const z of [-0.45, 0.45]) {
+        rk.sph(0.42, '#9a6233', 'base', [x, 1.0, z], [1.5, 0.8, 0.8], 10); rk.sph(0.22, '#9a6233', 'base', [x + 0.65, 1.45, z], [1.2, 1, 0.9], 10);
+        rk.sph(0.08, i === 1 && z < 0 ? '#ff3b4e' : '#3b2a20', i === 1 && z < 0 ? 'lit' : 'base', [x + 0.9, 1.45, z], [1, 1, 1], 6);
+        for (const lx of [-0.3, 0.3]) rk.cyl(0.05, 0.05, 0.6, '#6b4428', 'base', [x + lx, 0.55, z], [0, 0, 0], 6);
+        rk.cyl(0.03, 0.03, 0.35, '#6b4428', 'base', [x + 0.55, 1.75, z - 0.1], [0.4, 0, -0.3], 5); rk.cyl(0.03, 0.03, 0.35, '#6b4428', 'base', [x + 0.55, 1.75, z + 0.1], [-0.4, 0, -0.3], 5);
+      }
+    }
+    rk.box(3.4, 0.04, 0.04, '#ffd23f', 'base', [2.6, 0.9, -0.45]); rk.box(3.4, 0.04, 0.04, '#ffd23f', 'base', [2.6, 0.9, 0.45]);
+    sl.add(meshOf(rk.build(), true, false));
+    s.add(sl); this.sleigh = sl;
+  }
+
   refresh() {
     this.slots.forEach((sl, i) => {
       const p = S.plots[i];
@@ -207,7 +252,7 @@ export class CityScene {
       for (const k of ['building', 'garden', 'blob', 'marker', 'sign']) if (sl[k]) { sl.g.remove(sl[k]); sl[k] = null; }
       const mat = sl.pad.material;
       if (!unlocked) { mat.map = null; mat.color.set('#c6c4cf'); }
-      else { mat.map = TEX.grass; mat.color.set(p.b ? '#c4eda6' : '#d4f2b8'); }
+      else { mat.map = TEX.grass; mat.color.set(this.xmas ? (p.b ? '#e9f3ff' : '#f4f9ff') : (p.b ? '#c4eda6' : '#d4f2b8')); }
       mat.needsUpdate = true;
       if (!unlocked) {
         sl.marker = lockSprite(); sl.marker.position.y = 1.3; sl.g.add(sl.marker);
@@ -299,6 +344,16 @@ export class CityScene {
     this.time += dt;
     TEX.water.offset.x = this.time * 0.012; TEX.water.offset.y = Math.sin(this.time * 0.3) * 0.02;
     this.foam.forEach((f, i) => { f.material.opacity = 0.75 + Math.sin(this.time * 1.5 + i) * 0.2; });
+    if (this.snow) {
+      const p = this.snow.geometry.attributes.position.array;
+      for (let i = 0; i < p.length; i += 3) { p[i + 1] -= dt * (2 + (i % 5) * 0.3); p[i] += Math.sin(this.time + i) * dt * 0.3; if (p[i + 1] < -1) p[i + 1] = 38 + Math.random() * 4; }
+      this.snow.geometry.attributes.position.needsUpdate = true;
+    }
+    if (this.sleigh) {
+      const a = this.time * 0.22, r = SPAN / 2 + 4;
+      this.sleigh.position.set(Math.cos(a) * r, 13 + Math.sin(this.time * 1.4) * 0.8, Math.sin(a) * r);
+      this.sleigh.rotation.y = -a - Math.PI / 2; this.sleigh.rotation.z = Math.sin(this.time * 1.4) * 0.08;
+    }
     this.boats.forEach((b, i) => {
       b.a += dt * 0.03 * (i ? -1 : 1);
       b.m.position.set(Math.cos(b.a) * b.r, -0.95 + Math.sin(this.time * 2 + i) * 0.05, Math.sin(b.a) * b.r);
