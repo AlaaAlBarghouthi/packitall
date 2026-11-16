@@ -24,6 +24,28 @@ function checkerTexture(a, b) {
   return tx;
 }
 
+function woodTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const tones = ['#c97a43', '#c27140', '#cf8249', '#bd6c3a'];
+  for (let row = 0; row < 4; row++) {
+    const y = row * 64, off = (row % 2) * 128;
+    for (let k = -1; k < 2; k++) {
+      const x = off + k * 256 / 1;
+      g.fillStyle = tones[(row + k + 4) % 4]; g.fillRect(x, y, 256, 64);
+      // grain
+      g.strokeStyle = 'rgba(120,60,25,.18)'; g.lineWidth = 2;
+      for (let l = 0; l < 4; l++) { g.beginPath(); const yy = y + 10 + l * 13 + ((row * 7 + l * 3) % 5); g.moveTo(x, yy); g.bezierCurveTo(x + 80, yy - 4, x + 170, yy + 5, x + 256, yy); g.stroke(); }
+      g.fillStyle = 'rgba(90,40,15,.55)'; g.fillRect(x, y, 3, 64); // end seam
+    }
+    g.fillStyle = 'rgba(90,40,15,.5)'; g.fillRect(0, y, 256, 3);
+    g.fillStyle = 'rgba(255,220,180,.18)'; g.fillRect(0, y + 3, 256, 3);
+  }
+  const tx = new THREE.CanvasTexture(c);
+  tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4;
+  return tx;
+}
+
 // ---- floor art atlas (4 cells) per world
 const DECALS = {
   beauty: [['heart', '#ff7fb5'], ['star', '#ffffff'], ['flower', '#ffb3d6'], ['bow', '#c58cff']],
@@ -80,7 +102,7 @@ function drawDecal(g, shape, col) {
 
 // ---- hole skins
 export const SKINS = {
-  classic: { rim: 0xc58cff, glow: [190, 110, 255] },
+  classic: { rim: 0xf4f4f8, glow: [150, 170, 255] },
   candy:   { rim: 'stripes', glow: [255, 90, 110], glow2: [120, 255, 160] },
   fire:    { rim: 'fire',   glow: [255, 120, 30], glow2: [255, 220, 80] },
   ice:     { rim: 'ice',    glow: [90, 200, 255], glow2: [220, 250, 255] },
@@ -142,7 +164,7 @@ export class HoleGame {
     this.timeLeft = lvl.time; this.elapsed = 0;
     const r0 = R0 * (1 + (perks.sizePct || 0) / 100);
     this.holeR = r0; this.area = r0 * r0; this.bonusR = 1; this.r0 = r0;
-    this.hole = new THREE.Vector3(0, 0, lvl.H * 0.75);
+    this.hole = new THREE.Vector3(0, 0, lvl.H * 0.6);
     this.vel = new THREE.Vector2();
     this.coinsEarned = 0; this.swallowed = 0; this.combo = 0; this.comboT = 0; this.matsRun = {}; this.itemsRun = {}; this.gemsRun = 0;
     this.active = {}; // booster timers
@@ -166,8 +188,8 @@ export class HoleGame {
 
     // floor with a hole (fragment discard)
     const fw = lvl.W * 2 + 60, fh = lvl.H * 2 + 60;
-    const tex = checkerTexture(th.floor[0], th.floor[1]);
-    tex.repeat.set(fw / 4, fh / 4);
+    const tex = th.wood ? woodTexture() : checkerTexture(th.floor[0], th.floor[1]);
+    tex.repeat.set(fw / (th.wood ? 4.5 : 4), fh / (th.wood ? 4.5 : 4));
     const floorMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
     const patchHole = (mat) => { mat.onBeforeCompile = (sh) => {
       sh.uniforms.uHole = this.uniforms.uHole; sh.uniforms.uHoleR = this.uniforms.uHoleR;
@@ -324,7 +346,7 @@ export class HoleGame {
     goalsEl.innerHTML = this.goals.map((g, i) => `
       <div class="goal" data-i="${i}">
         <div class="goal-ico" style="background-image:url(${modelIcon(g.name)})">${g.boss ? '<span class="big-tag boss">👑</span>' : g.big ? '<span class="big-tag">XL</span>' : ''}</div>
-        <div class="goal-cnt"><span>0</span>/${g.need}</div>
+        <div class="goal-cnt"><span>${g.need}</span></div>
         <div class="goal-check">✓</div>
       </div>`).join('');
     $('#lvl-label').textContent = t('level') + ' ' + this.level.n;
@@ -355,7 +377,7 @@ export class HoleGame {
     const g = this.goals[i];
     const el = document.querySelector(`.goal[data-i="${i}"]`);
     if (!el) return;
-    el.querySelector('.goal-cnt span').textContent = Math.min(g.got, g.need);
+    el.querySelector('.goal-cnt span').textContent = Math.max(0, g.need - g.got);
     el.classList.toggle('done', g.got >= g.need);
     el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
   }
@@ -515,6 +537,16 @@ export class HoleGame {
     if (this.tooBigCooldown > 0) this.tooBigCooldown -= dt;
 
     this._camera(dt);
+    this._sizeTag();
+  }
+  _sizeTag() {
+    const el = this._tagEl || (this._tagEl = document.getElementById('size-tag'));
+    if (!el) return;
+    const R = this.holeR * this.bonusR;
+    const v = new THREE.Vector3(this.hole.x, 0, this.hole.z + R * 1.12).project(this.camera);
+    el.style.transform = `translate(-50%, 0) translate(${(v.x + 1) / 2 * window.innerWidth}px, ${(1 - v.y) / 2 * window.innerHeight}px)`;
+    const n = 1 + Math.floor((this.holeR - R0) / 0.3);
+    if (el._n !== n) { el._n = n; el.textContent = t('sizeN', { n }); if (n > 1) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } }
   }
 
   _updateHole(instant) {

@@ -444,7 +444,7 @@ function startLevel(pre = {}) {
   St.tickHearts();
   if (S.hearts <= 0) return noHearts();
   sfx.click();
-  mode = 'game';
+  mode = 'game'; document.body.classList.add('in-game');
   closeModal(true);
   ['#topbar', '#tabs', '#nav'].forEach((s) => $(s).classList.add('hidden'));
   $('#game-hud').classList.remove('hidden');
@@ -460,7 +460,7 @@ function startLevel(pre = {}) {
 }
 
 function backToMenu(toTab = 'play') {
-  mode = 'menu';
+  mode = 'menu'; document.body.classList.remove('in-game');
   game.running = false; game.clear();
   $('#game-hud').classList.add('hidden'); $('#tut').classList.add('hidden');
   ['#topbar', '#tabs', '#nav'].forEach((s) => $(s).classList.remove('hidden'));
