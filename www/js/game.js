@@ -231,6 +231,7 @@ export class HoleGame {
     el.className = 'floater ' + cls; el.textContent = text;
     el.style.left = (x + (Math.random() - 0.5) * 60) + 'px'; el.style.top = (y - 30) + 'px';
     $('#floaters').appendChild(el);
+    if (window.__RECMODE) { el.style.animation = 'none'; (this.recFloaters = this.recFloaters || []).push({ el, t: 0 }); return; }
     setTimeout(() => el.remove(), 900);
   }
 
@@ -293,6 +294,15 @@ export class HoleGame {
       this.introT -= dt;
       if (this.introT <= 0) $('#intro').classList.remove('show');
     }
+    if (this.recFloaters) this.recFloaters = this.recFloaters.filter((f) => {
+      f.t += dt; const p = f.t / 0.9;
+      if (p >= 1) { f.el.remove(); return false; }
+      const op = p < 0.15 ? p / 0.15 : 1 - (p - 0.15) / 0.85;
+      const sc = p < 0.15 ? 0.6 + (p / 0.15) * 0.5 : 1.1 - Math.min(0.1, (p - 0.15));
+      const y = p < 0.15 ? 10 - (p / 0.15) * 10 : -70 * ((p - 0.15) / 0.85);
+      f.el.style.opacity = op; f.el.style.transform = `translate(-50%, ${y}px) scale(${sc})`;
+      return true;
+    });
     if (this.paused || this.ended) { this._camera(dt, true); return; }
     this.elapsed += dt;
 

@@ -32,6 +32,9 @@ const $$ = (s) => document.querySelectorAll(s);
 const Cap = window.Capacitor;
 const native = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
 const plugin = (n) => native && Cap.Plugins ? Cap.Plugins[n] : null;
+// recording mode for promo videos (?rec): time is stepped manually, frame by frame
+const REC = /[?&]rec\b/.test(location.search);
+window.__RECMODE = REC;
 
 let renderer, city, game, mode = 'menu', tab = 'play';
 
@@ -441,7 +444,7 @@ async function boot() {
   applyLang();
 
   renderer = new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+  renderer.setPixelRatio(REC ? (window.devicePixelRatio || 1) : Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
@@ -479,6 +482,17 @@ async function boot() {
   ['#topbar', '#tabs', '#nav'].forEach((s) => $(s).classList.remove('hidden'));
   showTab('play'); refreshTop();
 
+  if (REC) {
+    window.__rec = {
+      game, city, St, S: () => St.S, startLevel, backToMenu, showTab, closeModal,
+      step(dt, n = 1, beforeEach, render = true) {
+        for (let i = 0; i < n; i++) { if (beforeEach) beforeEach(i); if (mode === 'game') game.update(dt); else city.update(dt); }
+        if (render) { if (mode === 'game') game.render(); else city.render(); }
+      },
+    };
+    ['#loading'].forEach((q) => $(q).classList.add('out'));
+    return;
+  }
   let last = performance.now();
   const loop = (now) => {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -494,7 +508,7 @@ async function boot() {
 }
 
 // offline support when installed from Safari/Chrome (web version only)
-if (!native && 'serviceWorker' in navigator && location.protocol === 'https:' && !location.hostname.endsWith('claude.ai') && !location.hostname.includes('claudeusercontent')) {
+if (!native && !REC && 'serviceWorker' in navigator && location.protocol === 'https:' && !location.hostname.endsWith('claude.ai') && !location.hostname.includes('claudeusercontent')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
