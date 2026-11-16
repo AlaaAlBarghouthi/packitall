@@ -34,7 +34,7 @@ export const THEMES = [
 
 // Holiday season world (used for every 2nd level while the event is on)
 export const XMAS_THEME = {
-  id: 'xmas', floor: ['#d3e9ff', '#ffffff'], sky: '#cfe6ff', fog: '#e6f2ff', snow: true,
+  id: 'xmas', floor: ['#a9d3ff', '#e6f3ff'], sky: '#cfe6ff', fog: '#e6f2ff', snow: true,
   small: [['candycane', 0.8], ['ornament', 0.75], ['bell', 0.8], ['cookie', 0.8]],
   medium: [['santahat', 0.95], ['stocking', 1.0], ['gingerbread', 1.0], ['present_green', 1.0], ['present_white', 1.0]],
   large: [['xtree', 1.5], ['snowman', 2.0], ['sled', 1.4], ['gingerhouse', 1.3]],

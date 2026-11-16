@@ -3,6 +3,8 @@ import asyncio, json, sys, time, subprocess, os
 from playwright.async_api import async_playwright
 
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'preview'   # preview | game | city | end
+XMAS = os.environ.get('XMAS') == '1'
+SUF = '_x' if XMAS else ''
 OUT = '/home/claude/video'
 FPS = 30
 import threading, http.server, functools, socket
@@ -16,7 +18,8 @@ threading.Thread(target=_serve, daemon=True).start()
 now = int(time.time() * 1000)
 SAVE = {'v': 1, 'coins': 12450, 'gems': 85, 'level': 6, 'stars': {}, 'hearts': 5, 'heartTs': now,
         'boosters': {'magnet': 3, 'tornado': 2, 'freeze': 2, 'grow': 2},
-        'settings': {'sound': False, 'vib': False, 'lang': 'ar'}, 'tutorial': False}
+        'settings': {'sound': False, 'vib': False, 'lang': 'ar'}, 'tutorial': False, 'tut': {'move': True, 'city': True}}
+if XMAS: SAVE.update({'level': 2, 'skin': 'candy', 'skins': ['classic', 'candy']})
 
 CAPTION_CSS = """
 #cap{position:fixed;left:0;right:0;top:30%;z-index:70;text-align:center;pointer-events:none;font-family:Baloo,sans-serif;
@@ -50,7 +53,7 @@ async def main():
         pg = await ctx.new_page()
         pg.on('pageerror', lambda e: print('ERR', e))
         await pg.add_init_script("localStorage.setItem('packitall_save_v1', %s)" % json.dumps(json.dumps(SAVE)))
-        await pg.goto('http://localhost:8099/index.html?rec'); await pg.wait_for_function('window.__rec', timeout=60000)
+        await pg.goto('http://localhost:8099/index.html?rec' + ('&xmas' if XMAS else '&noxmas')); await pg.wait_for_function('window.__rec', timeout=60000)
         await pg.add_style_tag(content=CAPTION_CSS)
         await pg.evaluate("document.body.insertAdjacentHTML('beforeend','<div id=\"cap\"></div>')")
         await pg.evaluate("document.fonts.ready")
@@ -66,8 +69,10 @@ async def main():
               window.__lastSw = 0; }""")
             caps = [(0, 80, 'قدّيش بتقدر <span class="y">تبلع</span>؟ 🕳️'), (150, 245, 'كل ما تبلع...<br><span class="y">بتكبر!</span> 😳'),
                     (335, 420, '<span class="y">ابلع</span> كل شي! 🔥')]
+            if XMAS: caps = [(0, 90, 'ابلع <span class="y">زينة العيد</span>! 🎄'), (150, 245, 'كل ما تبلع...<br><span class="y">بتكبر!</span> ❄️'),
+                    (335, 420, '<span class="y">بابا نويل</span> ناطرك! 🎅')]
             N = 420
-            if MODE == 'game': wr, tmp = ffmpeg_writer('s1_game')
+            if MODE == 'game': wr, tmp = ffmpeg_writer('s1_game' + SUF)
             for f in range(N):
                 txt = next((c[2] for c in caps if c[0] <= f < c[1]), '')
                 if f == 0 or any(f in (c[0], c[1]) for c in caps): await caption(pg, txt)
@@ -83,8 +88,8 @@ async def main():
                 if f % 60 == 0: print('frame', f, 'R', round(sw[1], 2), flush=True)
             if MODE == 'game':
                 wr.stdin.close(); rc = wr.wait()
-                if rc == 0: os.replace(tmp, f'{OUT}/s1_game.mp4')
-                json.dump(events, open(f'{OUT}/events_game.json', 'w'))
+                if rc == 0: os.replace(tmp, f'{OUT}/s1_game{SUF}.mp4')
+                json.dump(events, open(f'{OUT}/events_game{SUF}.json', 'w'))
 
         if MODE in ('preview', 'city'):
             await pg.evaluate("""() => { const r = window.__rec, S = r.S(); S.level = 30; S.coins = 12450;
@@ -94,8 +99,11 @@ async def main():
             order = [5, 6, 9, 10, 1, 2, 4, 8, 7, 11, 13, 14, 0, 3, 12, 15]
             types = ['house', 'cafe', 'icecream', 'fountain', 'boutique', 'bakery', 'greenhouse', 'park', 'mansion', 'cinema', 'hotel', 'tower', 'toystore', 'ferris', 'stadium', 'castle']
             caps = [(0, 130, 'وبالكوينز...<br><span class="y">ابنِ مدينتك</span> 🏙️'), (190, 330, 'من بيت صغير...<br><span class="y">لمدينة كاملة</span> ✨')]
+            if XMAS:
+                caps = [(0, 130, 'وزيّن <span class="y">مدينتك</span><br>للعيد 🎄'), (190, 330, 'ثلج... أضواء...<br><span class="y">ومزلجة طايرة!</span> 🛷')]
+                types = ['workshop' if t == 'fountain' else t for t in types]
             N = 330
-            if MODE == 'city': wr, tmp = ffmpeg_writer('s2_city')
+            if MODE == 'city': wr, tmp = ffmpeg_writer('s2_city' + SUF)
             for f in range(N):
                 txt = next((c[2] for c in caps if c[0] <= f < c[1]), '')
                 if f == 0 or any(f in (c[0], c[1]) for c in caps): await caption(pg, txt)
@@ -112,17 +120,18 @@ async def main():
                     await pg.screenshot(path=f'{OUT}/prev_city_{f}.jpg', type='jpeg', quality=85)
             if MODE == 'city':
                 wr.stdin.close(); rc = wr.wait()
-                if rc == 0: os.replace(tmp, f'{OUT}/s2_city.mp4')
-                json.dump(events, open(f'{OUT}/events_city.json', 'w'))
+                if rc == 0: os.replace(tmp, f'{OUT}/s2_city{SUF}.mp4')
+                json.dump(events, open(f'{OUT}/events_city{SUF}.json', 'w'))
 
         if MODE in ('preview', 'end'):
-            await pg.evaluate("""() => { document.body.insertAdjacentHTML('beforeend', `<div id="endcard" style="position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;background:radial-gradient(circle at 50% 42%,#9a5cf0,#2a1458 70%);font-family:Baloo,sans-serif">
+            await pg.evaluate(f"window.__X = {'true' if XMAS else 'false'}")
+            await pg.evaluate("""() => { document.body.insertAdjacentHTML('beforeend', `<div id="endcard" style="position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;background:${window.__X ? 'radial-gradient(circle at 50% 42%,#e8323e,#5a0a18 72%)' : 'radial-gradient(circle at 50% 42%,#9a5cf0,#2a1458 70%)'};font-family:Baloo,sans-serif">
               <img src="icon-512.png" style="width:230px;height:230px;border-radius:54px;box-shadow:0 12px 0 #1d0a4a,0 0 0 8px #fff">
               <div class="logo big" style="transform:rotate(-4deg) scale(1.15)"><span>PACK</span><span>IT ALL</span></div>
-              <div style="font-weight:800;font-size:40px;color:#fff;text-shadow:0 3px 0 #3a1580">ابلع · اجمع · ابنِ</div>
+              <div style="font-weight:800;font-size:40px;color:#fff;text-shadow:0 3px 0 #3a1580">${window.__X ? 'عيد ميلاد مجيد 🎄' : 'ابلع · اجمع · ابنِ'}</div>
               <div class="btn btn-green btn-big" style="font-size:34px;min-width:300px">العبها مجاناً 🎮</div></div>`); }""")
             await pg.wait_for_timeout(800)
-            await pg.screenshot(path=f'{OUT}/end.png' if MODE == 'end' else f'{OUT}/prev_end.jpg', type='png' if MODE == 'end' else 'jpeg')
+            await pg.screenshot(path=f'{OUT}/end{SUF}.png' if MODE == 'end' else f'{OUT}/prev_end.jpg', type='png' if MODE == 'end' else 'jpeg')
         await b.close()
 
 asyncio.run(main())
