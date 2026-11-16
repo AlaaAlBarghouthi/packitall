@@ -3,6 +3,7 @@ import * as THREE from './lib/three.module.min.js';
 import { getModel, itemMaterial, modelIcon } from './models.js';
 import { generateLevel, populate } from './levels.js';
 import { sfx, haptic } from './audio.js';
+import { MATERIAL_OF, materialGain } from './data.js';
 import { t, fmt, fmtTime } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
@@ -49,16 +50,19 @@ export class HoleGame {
   }
 
   // ---------------------------------------------------------------- setup
-  start(n, boosters) {
+  start(n, boosters, perks = {}, opts = {}) {
+    this.perks = perks; this.opts = opts;
     this.clear();
     const lvl = populate(generateLevel(n), (name) => getModel(name).foot);
     this.level = lvl;
     this.boostersInv = boosters; // reference to save.boosters (mutated by main via callback)
+    lvl.time += perks.timeS || 0;
     this.timeLeft = lvl.time; this.elapsed = 0;
-    this.holeR = R0; this.area = R0 * R0; this.bonusR = 1;
+    const r0 = R0 * (1 + (perks.sizePct || 0) / 100);
+    this.holeR = r0; this.area = r0 * r0; this.bonusR = 1; this.r0 = r0;
     this.hole = new THREE.Vector3(0, 0, lvl.H * 0.75);
     this.vel = new THREE.Vector2();
-    this.coinsEarned = 0; this.swallowed = 0; this.combo = 0; this.comboT = 0;
+    this.coinsEarned = 0; this.swallowed = 0; this.combo = 0; this.comboT = 0; this.matsRun = {};
     this.active = {}; // booster timers
     this.ended = false; this.extraUsed = false; this.tooBigCooldown = 0;
     this.countdown = 1.6; this._camInit = false;
@@ -154,6 +158,8 @@ export class HoleGame {
     this.running = true; this.paused = false;
     this._resize();
     this._showIntro();
+    this.tut = opts.tutorial ? { step: 0, x0: this.hole.x, z0: this.hole.z } : null;
+    if (this.tut) this.introT = 1.2;
   }
 
   clear() {
@@ -219,9 +225,26 @@ export class HoleGame {
       <div class="intro-title">${t('level')} ${this.level.n}</div>
       <div class="intro-sub">${t('theme_' + this.level.theme.id)}</div>
       <div class="intro-goals">${this.goals.map(g => `<div class="ig"><img src="${modelIcon(g.name)}"/><b>×${g.need}</b></div>`).join('')}</div>
-      <div class="intro-hint">${t('tapToMove')}</div></div>`;
+      ${this._perkChips()}
+      <div class="intro-hint">${this.level.n <= 3 ? t('matsHint') : t('tapToMove')}</div></div>`;
     el.classList.add('show');
     this.introT = 2.0;
+  }
+  _perkChips() {
+    const P = this.perks || {}, out = [];
+    if (P.timeS) out.push(`⏱️ +${P.timeS}s`); if (P.sizePct) out.push(`🕳️ +${P.sizePct}%`); if (P.coinPct) out.push(`🪙 +${P.coinPct}%`);
+    return out.length ? `<div class="mrow" style="justify-content:center;margin:2px 0 4px">${out.map((x) => `<span class="mchip ok">${x}</span>`).join('')}</div>` : '';
+  }
+  _tutorial(dt) {
+    const el = $('#tut'); if (!el) return;
+    if (!this.tut) { el.classList.add('hidden'); return; }
+    const T = this.tut;
+    if (T.step === 0) { if (Math.hypot(this.hole.x - T.x0, this.hole.z - T.z0) > 3) { T.step = 1; T.n0 = this.swallowed; } }
+    else if (T.step === 1) { if (this.swallowed - T.n0 >= 5) { T.step = 2; T.t = 4; } }
+    else { T.t -= dt; if (T.t <= 0) { if (T.step === 2) { T.step = 3; T.t = 3.5; } else { this.tut = null; el.classList.add('hidden'); if (this.events.onTutorialDone) this.events.onTutorialDone(); return; } } }
+    el.classList.remove('hidden');
+    el.classList.toggle('nohand', T.step !== 0);
+    $('#tut-text').textContent = t(['tut1', 'tut2', 'tut3', 'tut4'][T.step]);
   }
   floater(text, cls = '') {
     const v = new THREE.Vector3(this.hole.x, 0.5, this.hole.z).project(this.camera);
@@ -277,7 +300,7 @@ export class HoleGame {
     if (!this.running || this.paused || this.ended) return false;
     if ((this.boostersInv[k] || 0) <= 0) return false;
     if (this.active[k]) return false;
-    this.active[k] = BOOST_TIME[k];
+    this.active[k] = BOOST_TIME[k] + ((this.perks || {})[k + 'S'] || 0);
     sfx.booster(); haptic('medium');
     this.floater(t(k) + '!', 'boost-f');
     this._hudBoosters();
@@ -315,7 +338,8 @@ export class HoleGame {
     this.bonusR += (targetBonus - this.bonusR) * Math.min(1, dt * 5);
 
     // timer
-    if (this.introT <= 0 && !this.active.freeze) this.timeLeft -= dt;
+    if (this.introT <= 0) this._tutorial(dt);
+    if (this.introT <= 0 && !this.active.freeze && !(this.tut && this.tut.step === 0)) this.timeLeft -= dt;
     this._hudTime();
     if (this.timeLeft <= 0) { this.timeLeft = 0; this._end(false); return; }
 
@@ -439,6 +463,8 @@ export class HoleGame {
     const before = this.holeR;
     this.holeR = Math.min(MAX_R, Math.sqrt(this.area));
     // coins
+    const mat = MATERIAL_OF[it.name];
+    if (mat) this.matsRun[mat] = (this.matsRun[mat] || 0) + materialGain(it.r);
     const coins = Math.max(1, Math.round(it.r * it.r * 10));
     this.coinsEarned += coins;
     $('#run-coins').textContent = fmt(this.coinsEarned);
@@ -448,7 +474,7 @@ export class HoleGame {
     if (big) { sfx.big(); haptic('heavy'); this.floater('+' + coins, 'big-f'); }
     else { sfx.pop(this.combo); haptic('light'); if (this.combo % 5 === 0) this.floater(t('combo') + ' x' + this.combo, 'combo-f'); else if (coins > 1) this.floater('+' + coins); }
     // size bar (progress to next "tier")
-    const pct = ((this.holeR - R0) / (MAX_R - R0)) * 100;
+    const pct = ((this.holeR - this.r0) / (MAX_R - this.r0)) * 100;
     $('#size-fill').style.width = Math.min(100, pct) + '%';
     if (Math.floor(this.holeR * 2) > Math.floor(before * 2)) { this.floater(t('size') + ' ↑', 'grow-f'); }
     // goals

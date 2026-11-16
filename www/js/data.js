@@ -19,6 +19,63 @@ export const BUILDINGS = {
   castle:     { cost: 16000, income: 1400, unlock: 26, pop: 60 },
 };
 export const BUILDING_ORDER = Object.keys(BUILDINGS);
+
+// ---- Materials: everything you swallow becomes building material of its category
+export const MATS = {
+  gift:   { icon: '🎁' },
+  sweet:  { icon: '🍩' },
+  toy:    { icon: '🧸' },
+  nature: { icon: '🌳' },
+  city:   { icon: '🧱' },
+};
+export const MAT_ORDER = Object.keys(MATS);
+export const MATERIAL_OF = {
+  perfume: 'gift', lipstick: 'gift', gift_purple: 'gift', gift_yellow: 'gift', gift_red: 'gift', bag: 'gift', headphones: 'gift', camera: 'gift', mirror: 'gift', nailpolish: 'gift',
+  donut: 'sweet', cupcake: 'sweet', candy: 'sweet', lollipop: 'sweet', icecream: 'sweet', macaron: 'sweet', cake: 'sweet',
+  teddy: 'toy', ball: 'toy', blocks: 'toy', duck: 'toy', rocket: 'toy', robot: 'toy', toycar: 'toy',
+  watermelon: 'nature', sandwich: 'nature', juice: 'nature', basket: 'nature', apple: 'nature', tree: 'nature', bench: 'nature',
+  cone: 'city', hydrant: 'city', mailbox: 'city', lamp: 'city', car: 'city', taxi: 'city', bus: 'city', house: 'city',
+};
+export function materialGain(r) { return Math.max(1, Math.round(r * r * 3)); }
+
+// materials needed to BUILD (level 1). Upgrades need matCost(type, nextLv).
+export const BUILD_MATS = {
+  house: { gift: 20 }, fountain: { gift: 15 }, cafe: { sweet: 25 }, icecream: { sweet: 40 },
+  bakery: { sweet: 50, gift: 25 }, park: { nature: 35 }, boutique: { gift: 70 }, greenhouse: { nature: 60 },
+  toystore: { toy: 70 }, cinema: { city: 60, toy: 40 }, mansion: { city: 90, gift: 40 }, hotel: { city: 110, sweet: 60 },
+  ferris: { toy: 90, nature: 60 }, tower: { city: 160 }, stadium: { nature: 110, toy: 110 }, castle: { gift: 160, city: 160 },
+};
+export function matCost(type, lv) {
+  const base = BUILD_MATS[type] || {}, k = lv <= 1 ? 1 : 1.5 * (lv - 1) + 0.5, out = {};
+  for (const m in base) out[m] = Math.round(base[m] * k);
+  return out;
+}
+
+// ---- Perks: every building type gives a bonus in levels (same type doesn't stack; highest level counts)
+export const PERKS = {
+  house:      { key: 'coinPct',  per: 5 },
+  fountain:   { key: 'regenMin', per: 2 },
+  cafe:       { key: 'magnetS',  per: 1 },
+  icecream:   { key: 'coinPct',  per: 10 },
+  bakery:     { key: 'timeS',    per: 4 },
+  park:       { key: 'sizePct',  per: 7 },
+  boutique:   { key: 'gemPct',   per: 20 },
+  greenhouse: { key: 'freezeS',  per: 2 },
+  toystore:   { key: 'dailyBoost', per: 1 },
+  cinema:     { key: 'tornadoS', per: 1 },
+  mansion:    { key: 'maxHearts', per: 1 },
+  hotel:      { key: 'capH',     per: 2 },
+  ferris:     { key: 'giftH',    per: 1 },
+  tower:      { key: 'growS',    per: 3 },
+  stadium:    { key: 'tbPct',    per: 25 },
+  castle:     { key: 'coinPct',  per: 15 },
+};
+export const PERK_ICON = { coinPct: '🪙', regenMin: '❤️', magnetS: '🧲', timeS: '⏱️', sizePct: '🕳️', gemPct: '💎', freezeS: '❄️', dailyBoost: '🎁', tornadoS: '🌪️', maxHearts: '❤️', capH: '🏦', giftH: '🎀', growS: '↔️', tbPct: '⏱️' };
+
+// ---- 7-day login calendar
+export const LOGIN_REWARDS = [
+  { coins: 100 }, { boost: 'magnet' }, { coins: 200 }, { gems: 5 }, { coins: 300, boost: 'tornado' }, { boost: 'grow', gems: 3 }, { coins: 500, gems: 15 },
+];
 export const MAX_BUILDING_LEVEL = 3;
 export const INCOME_CAP_HOURS = 4;
 

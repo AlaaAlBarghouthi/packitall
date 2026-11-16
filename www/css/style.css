@@ -228,3 +228,32 @@ html[dir=ltr] .bld .bt small { justify-content: flex-start; }
 .ad-demo-tag { display: inline-block; font-size: 12px; font-weight: 800; color: #fff; background: #1f8fe0; border-radius: 8px; padding: 2px 8px; }
 .ad-demo-ico { font-size: 64px; margin: 8px 0; }
 .ad-demo-card b { font-size: 40px; color: #3a1580; }
+
+/* ---------- materials & perks */
+.mrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.mchip { display: inline-flex; align-items: center; gap: 2px; padding: 1px 7px; border-radius: 10px; background: #f1ebfc; border: 2px solid #e0d4f8; font-weight: 800; font-size: 13px; direction: ltr; color: #3a1580; white-space: nowrap; }
+.mchip.ok { background: #e6f9e9; border-color: #b9e8c1; color: #1d7a33; }
+.mchip.no { background: #ffe8ec; border-color: #ffc2cd; color: #c4133a; }
+.perk-line { display: block; font-size: 12.5px; font-weight: 700; color: #8c4fea; line-height: 1.25; }
+.perk-box { background: #f6f0ff; border: 2px dashed #c9b3ff; border-radius: 14px; padding: 8px 10px; margin: 6px 0; font-size: 15px; color: #3a1580; }
+.perk-box small { color: #6b5a8f; }
+.perk-list { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; text-align: start; }
+.perk-row { background: #f6f0ff; border-radius: 12px; padding: 8px 12px; font-weight: 700; color: #3a1580; }
+.city-mats { position: absolute; top: calc(var(--st) + 98px); left: 0; right: 0; display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; pointer-events: none; }
+.city-mats .mchip { background: rgba(255,255,255,.92); }
+.bonus-btn { position: absolute; top: calc(var(--st) + 132px); left: 50%; transform: translateX(-50%); min-height: 36px; font-size: 15px; padding: 2px 14px; pointer-events: auto; }
+.bonus-btn:active { transform: translateX(-50%) translateY(2px); }
+.city-hint { position: absolute; left: 0; right: 0; margin: 0 auto; width: max-content; max-width: 92vw; bottom: calc(var(--sb) + 170px); background: #fff; border: 3px solid #3a1580; border-radius: 18px; padding: 8px 16px; font-weight: 800; font-size: 17px; color: #3a1580; white-space: nowrap; box-shadow: 0 4px 0 #3a1580; animation: bob 1.2s ease-in-out infinite; }
+/* ---------- tutorial */
+#tut { position: fixed; inset: 0; pointer-events: none; z-index: 16; }
+.tut-text { position: absolute; left: 50%; top: 31%; transform: translateX(-50%); width: min(88vw, 360px); text-align: center; background: rgba(255,255,255,.95); border: 3px solid #3a1580; border-radius: 20px; padding: 10px 14px; font-weight: 800; font-size: 18px; color: #3a1580; box-shadow: 0 4px 0 #3a1580; }
+.tut-hand { position: absolute; left: 50%; top: 66%; font-size: 54px; animation: tutDrag 1.6s ease-in-out infinite; }
+#tut.nohand .tut-hand { display: none; }
+@keyframes tutDrag { 0% { transform: translate(-60px, 0); } 50% { transform: translate(40px, -30px); } 100% { transform: translate(-60px, 0); } }
+/* ---------- login calendar */
+.login-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+.lday { border-radius: 14px; background: #f1ebfc; border: 2px solid #e0d4f8; padding: 6px 2px; font-size: 12px; font-weight: 800; color: #6b5a8f; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.lday .lr { font-size: 13px; color: #3a1580; line-height: 1.2; direction: ltr; }
+.lday.done { opacity: .5; }
+.lday.today { background: linear-gradient(#ffe36b, #ffb21f); border-color: #9a5a00; color: #5a2d00; transform: scale(1.06); }
+.lday.d7 { grid-column: span 2; }

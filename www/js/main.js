@@ -4,8 +4,10 @@ import { I } from './icons.js';
 import { t, setLang, getLang, fmt, fmtDuration } from './i18n.js';
 import * as St from './state.js';
 import { S } from './state.js';
-import { BUILDINGS, BUILDING_ORDER, BOOSTERS, MAX_HEARTS, REFILL_GEMS, EXTRA_TIME_GEMS,
-  GIFT_COOLDOWN_MS, PLOT_UNLOCK, MAX_BUILDING_LEVEL, upgradeCost, incomeOf } from './data.js';
+import { MATS, MAT_ORDER, matCost, PERKS, LOGIN_REWARDS, GIFT_COOLDOWN_MS } from './data.js';
+const giftCooldown = () => Math.max(3600000, GIFT_COOLDOWN_MS - St.perks().giftH * 3600000);
+import { BUILDINGS, BUILDING_ORDER, BOOSTERS, REFILL_GEMS, EXTRA_TIME_GEMS,
+  PLOT_UNLOCK, MAX_BUILDING_LEVEL, upgradeCost, incomeOf } from './data.js';
 import { THEMES } from './levels.js';
 import { sfx, haptic, unlockAudio } from './audio.js';
 import { HoleGame } from './game.js';
@@ -43,6 +45,20 @@ function icons(root = document) {
 }
 function texts(root = document) { root.querySelectorAll('[data-t]').forEach((el) => { el.textContent = t(el.dataset.t); }); }
 
+// ---------------------------------------------------------------- materials & perks helpers
+function matChips(cost, showHave = true) {
+  return Object.keys(cost).map((m) => {
+    const ok = (S.mats[m] || 0) >= cost[m];
+    return `<span class="mchip ${showHave ? (ok ? 'ok' : 'no') : ''}">${MATS[m].icon} ${showHave ? fmt(S.mats[m] || 0) + '/' : ''}${fmt(cost[m])}</span>`;
+  }).join('');
+}
+function gainChips(m) { return MAT_ORDER.filter((k) => m[k]).map((k) => `<span class="mchip ok">${MATS[k].icon} +${fmt(m[k])}</span>`).join(''); }
+function perkText(type, lv) { const pk = PERKS[type]; return pk ? t('pk_' + pk.key, { n: pk.per * lv }) : ''; }
+function perksList() {
+  const P = St.perks(); const keys = Object.keys(P).filter((k) => P[k] > 0);
+  return keys.map((k) => `<div class="perk-row"><span>${t('pk_' + k, { n: P[k] })}</span></div>`).join('');
+}
+
 // ---------------------------------------------------------------- toast & modal
 let toastT;
 function toast(msg) {
@@ -68,7 +84,7 @@ function refreshTop() {
   $('#coins-n').textContent = fmt(S.coins);
   $('#gems-n').textContent = fmt(S.gems);
   const ms = St.msToNextHeart();
-  $('#hearts-t').textContent = S.hearts < MAX_HEARTS ? fmtDuration(ms) : '';
+  $('#hearts-t').textContent = S.hearts < St.maxHearts() ? fmtDuration(ms) : '';
   const n = St.tasksReady(); const b = $('#tasks-badge');
   b.textContent = n; b.classList.toggle('on', n > 0);
 }
@@ -80,7 +96,7 @@ function showTab(name) {
   $$('#nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
   city.active = name === 'city';
   if (name === 'play') renderMap();
-  if (name === 'city') renderCityHud();
+  if (name === 'city') { renderCityHud(); toyStoreGift(); }
   if (name === 'tasks') renderTasks();
   if (name === 'shop') renderShop();
 }
@@ -114,6 +130,15 @@ function renderCityHud() {
   const btn = $('#btn-collect');
   btn.innerHTML = `<i data-i="coin"></i> ${t('collect')} ${pending > 0 ? fmt(pending) : ''}`; icons(btn);
   btn.disabled = pending <= 0;
+  $('#city-mats').innerHTML = MAT_ORDER.map((m) => `<span class="mchip">${MATS[m].icon} ${fmt(S.mats[m] || 0)}</span>`).join('');
+  $('#city-hint').classList.toggle('hidden', !!(S.tut.city || S.plots.some((p) => p.b)));
+}
+function openBonuses() {
+  sfx.click();
+  const list = perksList();
+  const card = modal(`<h2>⚡ ${t('bonuses')}</h2><div class="perk-list">${list || `<p>${t('noBonuses')}</p>`}</div>
+    <div class="actions"><button class="btn btn-green" id="m-close">${t('close')}</button></div>`);
+  card.querySelector('#m-close').onclick = () => closeModal();
 }
 
 function renderTasks() {
@@ -140,13 +165,13 @@ function renderTasks() {
 
 function renderShop() {
   const el = $('#shop-list');
-  const giftReady = Date.now() - S.giftTs >= GIFT_COOLDOWN_MS;
+  const giftReady = Date.now() - S.giftTs >= giftCooldown();
   el.innerHTML = `
     <div class="card row">
       <div class="big-ico" style="width:60px;height:60px;margin:0"><i data-i="gift" style="width:60px;height:60px"></i></div>
       <div class="grow"><b style="font-size:18px">${t('freeGift')}</b><br><small style="color:#6b5a8f">+100 🪙 +2 💎</small></div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
-        <button class="btn ${giftReady ? 'btn-green' : 'btn-gray'}" id="btn-gift" ${giftReady ? '' : 'disabled'}>${giftReady ? t('claim') : fmtDuration(GIFT_COOLDOWN_MS - (Date.now() - S.giftTs))}</button>
+        <button class="btn ${giftReady ? 'btn-green' : 'btn-gray'}" id="btn-gift" ${giftReady ? '' : 'disabled'}>${giftReady ? t('claim') : fmtDuration(giftCooldown() - (Date.now() - S.giftTs))}</button>
         ${giftReady ? '' : adBtn('gift', t('adNow'), 'btn-adgift')}
       </div>
     </div>
@@ -167,8 +192,8 @@ function renderShop() {
     <div class="sec-title">${t('hearts')}</div>
     <div class="card row">
       <i data-i="heart" style="width:50px;height:50px"></i>
-      <div class="grow"><b style="font-size:18px">${t('refill')}</b><br><small style="color:#6b5a8f;direction:ltr;display:inline-block">${S.hearts}/${MAX_HEARTS}</small></div>
-      <button class="btn btn-pink" id="btn-refill" ${S.hearts < MAX_HEARTS && S.gems >= REFILL_GEMS ? '' : 'disabled'} style="direction:ltr"><i data-i="gem"></i>${REFILL_GEMS}</button>
+      <div class="grow"><b style="font-size:18px">${t('refill')}</b><br><small style="color:#6b5a8f;direction:ltr;display:inline-block">${S.hearts}/${St.maxHearts()}</small></div>
+      <button class="btn btn-pink" id="btn-refill" ${S.hearts < St.maxHearts() && S.gems >= REFILL_GEMS ? '' : 'disabled'} style="direction:ltr"><i data-i="gem"></i>${REFILL_GEMS}</button>
     </div>
     <div class="card row">
       <i data-i="coin" style="width:50px;height:50px"></i>
@@ -204,10 +229,12 @@ function onPlotTap(i) {
     <img src="${buildingIcon(p.b, p.lv)}" style="width:120px;height:120px">
     <h2>${t('bld_' + p.b)}</h2>
     <p>${t('lvl')} ${p.lv}/${MAX_BUILDING_LEVEL} · ${t('income')}: <b style="direction:ltr;display:inline-block">${fmt(incomeOf(p.b, p.lv))}${t('perHour')}</b></p>
+    <div class="perk-box"><b>⚡ ${t('perk')}:</b> ${perkText(p.b, p.lv)}${maxed ? '' : `<br><small>${t('nextLv')}: ${perkText(p.b, p.lv + 1)}</small>`}</div>
     <div class="actions">
       <button class="btn btn-yellow" id="m-collect" ${pend > 0 ? '' : 'disabled'}><i data-i="coin"></i>${t('collect')} ${pend > 0 ? fmt(pend) : ''}</button>
       ${maxed ? `<button class="btn btn-gray" disabled>${t('maxed')}</button>` :
-        `<button class="btn btn-green" id="m-up" ${S.coins >= cost ? '' : 'disabled'}>${t('upgrade')} <span style="direction:ltr;display:inline-flex;align-items:center;gap:4px"><i data-i="coin"></i>${fmt(cost)}</span></button>
+        `<div class="mrow">${matChips(matCost(p.b, p.lv + 1))}</div>
+         <button class="btn btn-green" id="m-up" ${S.coins >= cost && St.hasMats(matCost(p.b, p.lv + 1)) ? '' : 'disabled'}>${t('upgrade')} <span style="direction:ltr;display:inline-flex;align-items:center;gap:4px"><i data-i="coin"></i>${fmt(cost)}</span></button>
          <small style="color:#6b5a8f">${t('income')} → <b style="direction:ltr;display:inline-block">${fmt(incomeOf(p.b, p.lv + 1))}${t('perHour')}</b></small>`}
       <button class="btn btn-gray" id="m-close">${t('close')}</button>
     </div>`);
@@ -221,21 +248,22 @@ function onPlotTap(i) {
 }
 
 function openBuildMenu(i) {
+  S.tut.city = true; St.save();
   const list = BUILDING_ORDER.map((k) => {
-    const d = BUILDINGS[k]; const lockd = S.level < d.unlock; const afford = S.coins >= d.cost;
+    const d = BUILDINGS[k]; const lockd = S.level < d.unlock; const mc = matCost(k, 1); const afford = S.coins >= d.cost && St.hasMats(mc);
     return `<div class="bld ${lockd ? 'locked' : ''}">
       <div class="bi" style="background-image:url(${buildingIcon(k)})"></div>
       <div class="bt"><b>${t('bld_' + k)}</b>
-        <small>${lockd ? `<i data-i="lock"></i> ${t('unlockAt')} ${d.unlock}` : `+${fmt(d.income)}${t('perHour')} <i data-i="coin"></i>`}</small></div>
+        ${lockd ? `<small><i data-i="lock"></i> ${t('unlockAt')} ${d.unlock}</small>` : `<span class="perk-line">⚡ ${perkText(k, 1)}</span><div class="mrow">${matChips(mc)}</div>`}</div>
       ${lockd ? '' : `<button class="btn ${afford ? 'btn-green' : 'btn-gray'}" data-b="${k}" ${afford ? '' : 'disabled'}><i data-i="coin"></i>${fmt(d.cost)}</button>`}
     </div>`;
   }).join('');
-  const card = modal(`<h2>${t('build')}</h2><p>${t('chooseBuilding')}</p><div class="bld-list">${list}</div>
+  const card = modal(`<h2>${t('build')}</h2><p>${t('chooseBuilding')}</p><div class="mrow" style="justify-content:center;margin-bottom:8px">${MAT_ORDER.map((m) => `<span class="mchip">${MATS[m].icon} ${fmt(S.mats[m] || 0)}</span>`).join('')}</div><div class="bld-list">${list}</div>
     <div class="actions"><button class="btn btn-gray" id="m-close">${t('close')}</button></div>`);
   card.querySelector('#m-close').onclick = () => { sfx.click(); closeModal(); };
   card.querySelectorAll('[data-b]').forEach((b) => b.onclick = () => {
     if (St.build(i, b.dataset.b)) { sfx.build(); haptic('heavy'); city.refresh(); city.burst(i); toast(t('built')); closeModal(); renderCityHud(); }
-    else { sfx.error(); toast(t('notEnough')); }
+    else { sfx.error(); toast(St.hasMats(matCost(b.dataset.b, 1)) ? t('notEnough') : t('needMats')); }
   });
 }
 
@@ -255,13 +283,13 @@ function startLevel() {
   ['#topbar', '#tabs', '#nav'].forEach((s) => $(s).classList.add('hidden'));
   $('#game-hud').classList.remove('hidden');
   city.active = false;
-  game.start(S.level, S.boosters);
+  game.start(S.level, S.boosters, St.perks(), { tutorial: !S.tut.move && S.level === 1 });
 }
 
 function backToMenu(toTab = 'play') {
   mode = 'menu';
   game.running = false; game.clear();
-  $('#game-hud').classList.add('hidden');
+  $('#game-hud').classList.add('hidden'); $('#tut').classList.add('hidden');
   ['#topbar', '#tabs', '#nav'].forEach((s) => $(s).classList.remove('hidden'));
   city.refresh();
   showTab(toTab);
@@ -275,7 +303,7 @@ function noHearts() {
       <button class="btn btn-pink" id="m-refill" ${S.gems >= REFILL_GEMS ? '' : 'disabled'} style="direction:ltr"><i data-i="gem"></i>${REFILL_GEMS} · ${t('refill')}</button>
       <button class="btn btn-gray" id="m-close">${t('close')}</button></div>`);
   const ah = card.querySelector('#m-adheart');
-  if (ah) ah.onclick = () => watchAd('heart', ah, () => { S.hearts = Math.min(MAX_HEARTS, S.hearts + 1); St.save(); sfx.goal(); closeModal(); toast('+1 ♥'); });
+  if (ah) ah.onclick = () => watchAd('heart', ah, () => { S.hearts = Math.min(St.maxHearts(), S.hearts + 1); St.save(); sfx.goal(); closeModal(); toast('+1 ♥'); });
   const upd = () => { const el = card.querySelector('#nh-t'); if (el) el.textContent = fmtDuration(St.msToNextHeart()); };
   upd(); const iv = setInterval(upd, 1000);
   modalOnClose = () => clearInterval(iv);
@@ -297,28 +325,33 @@ function pauseGame() {
 }
 
 function commitRun(win, res) {
-  // swallowed items + coins always count (keeps the city growing)
-  const coins = game.coinsEarned + (res ? res.timeBonus + res.winBonus : 0);
+  // coins, materials and swallowed items always count (keeps the city growing)
+  const P = St.perks();
+  const itemCoins = Math.round(game.coinsEarned * (1 + P.coinPct / 100));
+  const tb = res ? Math.round(res.timeBonus * (1 + P.tbPct / 100)) : 0;
+  const coins = itemCoins + tb + (res ? res.winBonus : 0);
   St.addCoins(coins);
+  const mats = { ...game.matsRun }; St.addMats(mats);
   S.stats.swallowed += game.swallowed;
   St.progressTask('swallow', game.swallowed);
-  game.swallowed = 0; game.coinsEarned = 0;
+  game.swallowed = 0; game.coinsEarned = 0; game.matsRun = {};
+  let gem = 0;
   if (win) {
     S.stats.levels++; St.progressTask('levels', 1);
     S.stars[res.level] = Math.max(S.stars[res.level] || 0, res.stars);
     if (res.level === S.level) S.level++;
     if (res.stars === 3) S.gems += 1;
+    if (Math.random() * 100 < P.gemPct) { S.gems += 1; gem = 1; }
   }
   St.save();
-  return coins;
+  return { coins, itemCoins, tb, mats, gem };
 }
 
 function onEnd(res) {
   if (res.win) {
     sfx.win(); haptic('heavy');
-    const runCoins = game.coinsEarned;
     const prevLevel = S.level;
-    const total = commitRun(true, res);
+    const cr = commitRun(true, res), total = cr.coins, runCoins = cr.itemCoins;
     const unlockedPlots = PLOT_UNLOCK.filter((u) => u === S.level && prevLevel < S.level).length;
     const newBld = BUILDING_ORDER.filter((k) => BUILDINGS[k].unlock === S.level && prevLevel < S.level);
     const card = modal(`
@@ -326,10 +359,12 @@ function onEnd(res) {
       <div class="big-stars">${[1, 2, 3].map((k) => `<i data-i="star" class="${k <= res.stars ? 'on' : ''}"></i>`).join('')}</div>
       <div class="reward-lines">
         <div><span>${t('swallowedC')}</span><b>${fmt(runCoins)}<i data-i="coin"></i></b></div>
-        <div><span>${t('timeBonus')}</span><b>${fmt(res.timeBonus)}<i data-i="coin"></i></b></div>
+        <div><span>${t('timeBonus')}</span><b>${fmt(cr.tb)}<i data-i="coin"></i></b></div>
         <div><span>${t('bonus')}</span><b>${fmt(res.winBonus)}<i data-i="coin"></i></b></div>
         <div class="total"><span>${t('earned')}</span><b>${fmt(total)}<i data-i="coin"></i></b></div>
       </div>
+      <div class="mrow" style="justify-content:center">${gainChips(cr.mats)}</div>
+      ${cr.gem ? `<p>💎 ${t('gemBonus')}</p>` : ''}
       ${newBld.length ? `<p>🔓 ${newBld.map((k) => t('bld_' + k)).join('، ')}</p>` : ''}
       ${unlockedPlots ? `<p>🔓 ${t('emptyPlot')} +${unlockedPlots}</p>` : ''}
       ${adBtn('double', t('adDouble') + ' +' + fmt(total), 'm-addouble')}
@@ -363,9 +398,10 @@ function onEnd(res) {
   } else {
     sfx.lose();
     St.loseHeart();
-    const coins = commitRun(false);
+    const cr = commitRun(false), coins = cr.coins;
     const card = modal(`<div class="big-ico"><i data-i="heart"></i></div><h2>${t('lose')}</h2>
       <p>-1 ♥ · ${t('earned')} <b style="direction:ltr;display:inline-block">${fmt(coins)}</b> 🪙</p>
+      <div class="mrow" style="justify-content:center">${gainChips(cr.mats)}</div>
       <div class="actions h">
         <button class="btn btn-gray" id="m-home">${t('home')}</button>
         <button class="btn btn-green" id="m-retry">${t('retry')}</button></div>`, false);
@@ -437,6 +473,31 @@ function welcome() {
   card.querySelector('#w-go').onclick = () => { S.tutorial = false; St.save(); closeModal(true); startLevel(); };
 }
 
+// ---------------------------------------------------------------- daily login + toy store
+function dailyStuff() {
+  if (St.loginPending() >= 0) return showLogin(() => toyStoreGift());
+  toyStoreGift();
+}
+function toyStoreGift() {
+  const got = St.claimDailyBoosters();
+  if (got.length) { sfx.coin(); toast(t('toyGift') + ' ' + got.map((k) => t(k)).join('، ')); }
+}
+function rewardLabel(r) {
+  return [r.coins ? `🪙${fmt(r.coins)}` : '', r.gems ? `💎${r.gems}` : '', r.boost ? { magnet: '🧲', tornado: '🌪️', freeze: '❄️', grow: '↔️' }[r.boost] : ''].filter(Boolean).join(' ');
+}
+function showLogin(after) {
+  const idx = St.loginPending();
+  const card = modal(`<h2>🎁 ${t('login')}</h2>
+    <div class="login-grid">${LOGIN_REWARDS.map((r, i) => `<div class="lday ${i < idx ? 'done' : ''} ${i === idx ? 'today' : ''} ${i === 6 ? 'd7' : ''}">
+      <span>${t('day')} ${i + 1}</span><span class="lr">${rewardLabel(r)}</span>${i < idx ? '✓' : ''}</div>`).join('')}</div>
+    <p style="font-size:14px">${t('comeTomorrow')}</p>
+    <div class="actions"><button class="btn btn-green btn-big" id="l-claim">${t('claim')}</button></div>`, false);
+  card.querySelector('#l-claim').onclick = () => {
+    const r = St.claimLogin(); if (r) { sfx.win(); haptic('medium'); toast('+ ' + rewardLabel(r)); }
+    closeModal(true); refreshTop(); if (after) after();
+  };
+}
+
 // ---------------------------------------------------------------- boot
 async function boot() {
   icons();
@@ -451,7 +512,7 @@ async function boot() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   city = new CityScene(renderer, { onPlotTap, onCoinTap });
-  game = new HoleGame(renderer, { onEnd });
+  game = new HoleGame(renderer, { onEnd, onTutorialDone: () => { S.tut.move = true; St.save(); } });
   city.resize();
   window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); city.resize(); game._resize(); });
 
@@ -460,6 +521,7 @@ async function boot() {
   $$('[data-go]').forEach((b) => b.onclick = () => { sfx.click(); showTab(b.dataset.go); });
   $('#btn-play').onclick = startLevel;
   $('#btn-settings').onclick = openSettings;
+  $('#btn-bonuses').onclick = openBonuses;
   $('#btn-pause').onclick = pauseGame;
   $('#btn-collect').onclick = () => { const n = St.collectAll(); if (n > 0) { sfx.coin(); haptic('medium'); toast('+' + fmt(n)); } renderCityHud(); };
   $$('.boost').forEach((b) => b.onclick = (e) => { e.stopPropagation(); boosterTap(b.dataset.b); });
@@ -504,6 +566,7 @@ async function boot() {
 
   setTimeout(() => { $('#loading').classList.add('out'); const SS = plugin('SplashScreen'); if (SS) SS.hide().catch(() => {}); }, 300);
   if (S.tutorial) setTimeout(welcome, 500);
+  else setTimeout(dailyStuff, 600);
   setTimeout(() => { initAds(); }, 1500);
 }
 

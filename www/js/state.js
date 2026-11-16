@@ -1,6 +1,6 @@
 // Save data, economy, hearts and daily tasks
 import { BUILDINGS, PLOT_UNLOCK, MAX_HEARTS, HEART_REGEN_MS, TASK_TEMPLATES,
-  incomeOf, INCOME_CAP_HOURS, upgradeCost, MAX_BUILDING_LEVEL } from './data.js';
+  incomeOf, INCOME_CAP_HOURS, upgradeCost, MAX_BUILDING_LEVEL, MAT_ORDER, matCost, PERKS, LOGIN_REWARDS } from './data.js';
 
 const KEY = 'packitall_save_v1';
 const listeners = new Set();
@@ -20,6 +20,10 @@ function fresh() {
     giftTs: 0,
     stats: { swallowed: 0, levels: 0, built: 0 },
     tutorial: true,
+    mats: { gift: 0, sweet: 0, toy: 0, nature: 0, city: 0 },
+    login: { last: '', streak: 0 },
+    toyDay: '',
+    tut: { move: false, city: false },
   };
 }
 
@@ -39,6 +43,9 @@ export async function load() {
       S.settings = Object.assign(fresh().settings, d.settings || {});
       S.boosters = Object.assign(fresh().boosters, d.boosters || {});
       S.stats = Object.assign(fresh().stats, d.stats || {});
+      S.mats = Object.assign(fresh().mats, d.mats || {});
+      S.login = Object.assign(fresh().login, d.login || {});
+      S.tut = Object.assign(fresh().tut, d.tut || {});
       while (S.plots.length < PLOT_UNLOCK.length) S.plots.push({ b: null, lv: 0, ts: 0 });
     } catch (e) { S = fresh(); }
   }
@@ -74,32 +81,51 @@ export function addGems(n) { S.gems += n; save(); }
 export function spendGems(n) { if (S.gems < n) return false; S.gems -= n; save(); return true; }
 
 // ---- hearts
+export function maxHearts() { return MAX_HEARTS + perks().maxHearts; }
+function regenMs() { return Math.max(5 * 60000, HEART_REGEN_MS - perks().regenMin * 60000); }
 export function tickHearts() {
-  if (S.hearts >= MAX_HEARTS) { S.heartTs = Date.now(); return; }
-  const now = Date.now();
-  const gained = Math.floor((now - S.heartTs) / HEART_REGEN_MS);
+  const MH = maxHearts();
+  if (S.hearts >= MH) { S.heartTs = Date.now(); return; }
+  const now = Date.now(), RG = regenMs();
+  const gained = Math.floor((now - S.heartTs) / RG);
   if (gained > 0) {
-    S.hearts = Math.min(MAX_HEARTS, S.hearts + gained);
-    S.heartTs = S.hearts >= MAX_HEARTS ? now : S.heartTs + gained * HEART_REGEN_MS;
+    S.hearts = Math.min(MH, S.hearts + gained);
+    S.heartTs = S.hearts >= MH ? now : S.heartTs + gained * RG;
     save();
   }
 }
 export function msToNextHeart() {
-  if (S.hearts >= MAX_HEARTS) return 0;
-  return HEART_REGEN_MS - (Date.now() - S.heartTs);
+  if (S.hearts >= maxHearts()) return 0;
+  return regenMs() - (Date.now() - S.heartTs);
 }
 export function loseHeart() {
-  if (S.hearts >= MAX_HEARTS) S.heartTs = Date.now();
+  if (S.hearts >= maxHearts()) S.heartTs = Date.now();
   S.hearts = Math.max(0, S.hearts - 1); save();
 }
-export function refillHearts() { S.hearts = MAX_HEARTS; S.heartTs = Date.now(); save(); }
+export function refillHearts() { S.hearts = maxHearts(); S.heartTs = Date.now(); save(); }
+
+// ---- perks from buildings (highest level of each type counts)
+export function perks() {
+  const out = { coinPct: 0, regenMin: 0, magnetS: 0, timeS: 0, sizePct: 0, gemPct: 0, freezeS: 0, dailyBoost: 0, tornadoS: 0, maxHearts: 0, capH: 0, giftH: 0, growS: 0, tbPct: 0 };
+  const best = {};
+  S.plots.forEach((p) => { if (p.b) best[p.b] = Math.max(best[p.b] || 0, p.lv); });
+  for (const b in best) { const pk = PERKS[b]; if (pk) out[pk.key] += pk.per * best[b]; }
+  return out;
+}
+
+// ---- materials
+export function addMats(m) { for (const k in m) S.mats[k] = (S.mats[k] || 0) + m[k]; save(); }
+export function hasMats(cost) { return Object.keys(cost).every((k) => (S.mats[k] || 0) >= cost[k]); }
+function spendMats(cost) { for (const k in cost) S.mats[k] -= cost[k]; }
 
 // ---- city
 export function plotUnlocked(i) { return S.level >= PLOT_UNLOCK[i]; }
 export function build(i, type) {
   const def = BUILDINGS[type];
   if (!def || !plotUnlocked(i) || S.plots[i].b) return false;
-  if (!spendCoins(def.cost)) return false;
+  const mc = matCost(type, 1);
+  if (S.coins < def.cost || !hasMats(mc)) return false;
+  S.coins -= def.cost; spendMats(mc);
   S.plots[i] = { b: type, lv: 1, ts: Date.now() };
   S.stats.built++; progressTask('build', 1); save();
   return true;
@@ -108,14 +134,16 @@ export function upgrade(i) {
   const p = S.plots[i];
   if (!p.b || p.lv >= MAX_BUILDING_LEVEL) return false;
   collectPlot(i);
-  if (!spendCoins(upgradeCost(p.b, p.lv))) return false;
+  const mc = matCost(p.b, p.lv + 1), cc = upgradeCost(p.b, p.lv);
+  if (S.coins < cc || !hasMats(mc)) return false;
+  S.coins -= cc; spendMats(mc);
   p.lv++; progressTask('build', 1); save();
   return true;
 }
 export function pendingIncome(i) {
   const p = S.plots[i];
   if (!p.b) return 0;
-  const hrs = Math.min(INCOME_CAP_HOURS, (Date.now() - p.ts) / 3600000);
+  const hrs = Math.min(INCOME_CAP_HOURS + perks().capH, (Date.now() - p.ts) / 3600000);
   return Math.floor(incomeOf(p.b, p.lv) * hrs);
 }
 export function collectPlot(i) {
@@ -177,4 +205,29 @@ export function claimTask(id) {
 }
 export function tasksReady() {
   return S.daily ? S.daily.tasks.filter(t => !t.claimed && t.progress >= t.target).length : 0;
+}
+
+// ---- toy store: free boosters once a day
+export function claimDailyBoosters() {
+  const n = perks().dailyBoost; if (!n || S.toyDay === today()) return [];
+  S.toyDay = today();
+  const ks = ['magnet', 'tornado', 'freeze', 'grow'], got = [];
+  for (let i = 0; i < n; i++) { const k = ks[Math.floor(Math.random() * ks.length)]; S.boosters[k] = (S.boosters[k] || 0) + 1; got.push(k); }
+  save(); return got;
+}
+
+// ---- 7-day login calendar (missing a day starts again from day 1)
+function yesterday() { const d = new Date(Date.now() - 86400000); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+export function loginPending() {
+  if (S.login.last === today()) return -1;
+  return S.login.last === yesterday() ? (S.login.streak % LOGIN_REWARDS.length) : 0;
+}
+export function claimLogin() {
+  const idx = loginPending(); if (idx < 0) return null;
+  const r = LOGIN_REWARDS[idx];
+  if (r.coins) S.coins += r.coins;
+  if (r.gems) S.gems += r.gems;
+  if (r.boost) S.boosters[r.boost] = (S.boosters[r.boost] || 0) + 1;
+  S.login = { last: today(), streak: idx + 1 };
+  save(); return r;
 }
