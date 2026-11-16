@@ -37,12 +37,17 @@ before the timer runs out, then spend your coins to build and upgrade your very 
 Game › Casual (Google Play) — Games › Casual / Puzzle (App Store)
 
 ## Content rating / التصنيف العمري
-Everyone / 4+. No violence, no user-generated content, no chat, no ads, no purchases (v1.0).
+Target audience: **13+** (choose 13–15, 16–17, 18+ in Play Console "Target audience"). No violence, no chat, no user content.
+"Contains ads": **Yes** (optional rewarded ads only). In-app purchases: No (v1.1).
 
 ## Privacy / الخصوصية
-- Google Play "Data safety": No data collected, no data shared.
-- App Store "App Privacy": Data Not Collected.
-- Privacy policy URL: publish PRIVACY.md on any public page (e.g. GitHub Pages) and paste the link.
+- Privacy policy URL: publish store/PRIVACY.md on any public page (e.g. GitHub Pages) and paste the link.
+- **Google Play → Data safety** (because of AdMob):
+  - Data collected: *Device or other IDs* (advertising ID), *Approximate location*, *App interactions* (ad interactions), *Diagnostics* (crash logs from the ads SDK).
+  - Purpose: *Advertising or marketing*, *Analytics*, *Fraud prevention, security and compliance*.
+  - Shared with third parties: **Yes** (Google AdMob). Encrypted in transit: **Yes**. Users can request deletion: via resetting the advertising ID.
+- **Google Play → App content → Advertising ID**: Yes, used for advertising.
+- **App Store → App Privacy**: Data Used to Track You → *Device ID*; Data Linked to You: none; Data Not Linked to You → *Coarse Location*, *Product Interaction*, *Advertising Data*, *Diagnostics*.
 
 ## Screenshots / الصور
 Required: phone screenshots (Play: at least 2; App Store: 6.9" iPhone set, 1320×2868 or 1290×2796).

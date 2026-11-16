@@ -95,9 +95,31 @@ assets/                 ← الأيقونة وشاشة البداية
 store/                  ← نصوص المتجر وسياسة الخصوصية
 ```
 
+## الإعلانات (اختيارية بس)
+- ما في ولا إعلان إجباري. الإعلان بيطلع بس لما اللاعب يكبس زر ▶ ليربح: قلب، ضعف الكوينز، +20 ثانية، مساعدة مجانية، أو الهدية قبل وقتها.
+- كل زر بينفع 5 مرات باليوم (بتغيّرها من `DAILY_CAP` بـ `www/js/config.js`).
+- الإعلانات محصورة بتصنيف **G** (مناسب لكل الأعمار) من الكود نفسه.
+- بالنسخة اللي على الويب في "إعلان تجريبي" مدته 3 ثواني بس، حتى تجرب النظام.
+
+### لتفعيل الإعلانات الحقيقية
+1. افتح حساب على [admob.google.com](https://admob.google.com) (الدفع بالتحويل البنكي مدعوم بالإمارات).
+2. **Apps ← Add app**: ضيف تطبيق Android وتطبيق iOS، وانسخ **App ID** تبع كل واحد (فيه علامة `~`).
+3. لكل تطبيق: **Ad units ← Add ad unit ← Rewarded**، وانسخ **Ad unit ID** (فيه علامة `/`).
+4. حط الأرقام:
+   - `www/js/config.js`: الـ Ad unit IDs، وغيّر `TEST: true` لـ `false`.
+   - `android/app/src/main/res/values/strings.xml`: الـ `admob_app_id`.
+   - `ios/App/App/Info.plist`: الـ `GADApplicationIdentifier`.
+5. **حماية المحتوى** من لوحة AdMob:
+   - **Blocking controls ← All apps ← Content ratings**: اختار **G**.
+   - **Sensitive categories**: احظر المواعدة، والقمار، والكحول، والمحتوى الجنسي، والأدوية، والسياسة، وأي شي ما بدك ياه.
+   - **Ad review center**: من هون بتشوف الإعلانات اللي طلعت وبتحظر أي واحد.
+6. **Privacy & messaging ← GDPR**: اعمل رسالة موافقة لأوروبا. اللعبة بتعرضها لحالها.
+7. بالآيفون: ضيف باقي أرقام `SKAdNetworkItems` من [دليل Google](https://developers.google.com/admob/ios/quick-start#update_your_infoplist) جوّا `Info.plist`.
+
+> ⚠️ لا تكبس على إعلاناتك الحقيقية بنفسك، لأن Google ممكن تسكّر الحساب. وخلّي `TEST: true` وإنت عم تجرّب.
+
 ## خطوات جاية مقترحة
 - **مشتريات داخل التطبيق** (جواهر، إزالة إعلانات): عن طريق RevenueCat (`@revenuecat/purchases-capacitor`).
-- **إعلانات بمكافأة** (مثلاً +20 ثانية مقابل إعلان): `@capacitor-community/admob`.
 - موسيقى خلفية ومراحل خاصة (Boss levels).
 
 الترخيص: Three.js (MIT)، خط Baloo Bhaijaan 2 (SIL OFL، الملف بـ `www/fonts/OFL.txt`).

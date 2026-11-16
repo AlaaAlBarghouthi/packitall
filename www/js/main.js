@@ -10,6 +10,22 @@ import { THEMES } from './levels.js';
 import { sfx, haptic, unlockAudio } from './audio.js';
 import { HoleGame } from './game.js';
 import { CityScene, buildingIcon } from './city.js';
+import { initAds, canShow, usesLeft, showRewarded, showPrivacyOptionsButton, openPrivacyOptions } from './ads.js';
+
+// "Watch an ad" button (only rendered when an ad can be shown)
+function adBtn(place, label, id) {
+  if (!canShow(place)) return '';
+  return `<button class="btn btn-ad" id="${id}"><span class="ad-ico">▶</span> ${label} <small class="ad-left">${usesLeft(place)}/5</small></button>`;
+}
+async function watchAd(place, btn, onReward) {
+  if (btn) btn.disabled = true;
+  const wasPaused = game && game.paused;
+  const ok = await showRewarded(place);
+  if (ok) { onReward(); haptic('medium'); }
+  else { toast(t('adFail')); if (btn) btn.disabled = false; }
+  if (game) game.paused = wasPaused;
+  return ok;
+}
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -126,8 +142,16 @@ function renderShop() {
     <div class="card row">
       <div class="big-ico" style="width:60px;height:60px;margin:0"><i data-i="gift" style="width:60px;height:60px"></i></div>
       <div class="grow"><b style="font-size:18px">${t('freeGift')}</b><br><small style="color:#6b5a8f">+100 🪙 +2 💎</small></div>
-      <button class="btn ${giftReady ? 'btn-green' : 'btn-gray'}" id="btn-gift" ${giftReady ? '' : 'disabled'}>${giftReady ? t('claim') : fmtDuration(GIFT_COOLDOWN_MS - (Date.now() - S.giftTs))}</button>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:stretch">
+        <button class="btn ${giftReady ? 'btn-green' : 'btn-gray'}" id="btn-gift" ${giftReady ? '' : 'disabled'}>${giftReady ? t('claim') : fmtDuration(GIFT_COOLDOWN_MS - (Date.now() - S.giftTs))}</button>
+        ${giftReady ? '' : adBtn('gift', t('adNow'), 'btn-adgift')}
+      </div>
     </div>
+    ${canShow('freeboost') ? `<div class="card row">
+      <div class="shop-item" style="flex:none"><div class="ico" style="width:56px;height:56px"><i data-i="magnet" style="width:30px;height:30px"></i></div></div>
+      <div class="grow"><b style="font-size:17px">${t('adBoostTitle')}</b><br><small style="color:#6b5a8f">${t('adBoostDesc')}</small></div>
+      ${adBtn('freeboost', t('adWatch'), 'btn-adboost')}
+    </div>` : ''}
     <div class="sec-title">${t('boosters')}</div>
     <div class="shop-grid">${Object.keys(BOOSTERS).map((k) => `
       <div class="card shop-item">
@@ -154,6 +178,8 @@ function renderShop() {
     if (St.spendCoins(BOOSTERS[k].price)) { S.boosters[k] = (S.boosters[k] || 0) + 1; St.save(); sfx.coin(); haptic(); renderShop(); }
     else { sfx.error(); toast(t('notEnough')); }
   });
+  const ag = $('#btn-adgift'); if (ag) ag.onclick = () => watchAd('gift', ag, () => { S.giftTs = 0; S.coins += 100; S.gems += 2; S.giftTs = Date.now(); St.save(); sfx.win(); renderShop(); });
+  const abo = $('#btn-adboost'); if (abo) abo.onclick = () => watchAd('freeboost', abo, () => { const ks = Object.keys(BOOSTERS); const k = ks[Math.floor(Math.random() * ks.length)]; S.boosters[k] = (S.boosters[k] || 0) + 1; St.save(); sfx.coin(); toast('+1 ' + t(k)); renderShop(); });
   const g = $('#btn-gift'); if (g && giftReady) g.onclick = () => { S.giftTs = Date.now(); S.coins += 100; S.gems += 2; St.save(); sfx.win(); renderShop(); };
   $('#btn-refill').onclick = () => { if (St.spendGems(REFILL_GEMS)) { St.refillHearts(); sfx.goal(); renderShop(); } };
   $('#btn-exchange').onclick = () => { if (St.spendGems(10)) { St.addCoins(500); sfx.coin(); renderShop(); } };
@@ -242,8 +268,11 @@ function noHearts() {
   const card = modal(`<div class="big-ico"><i data-i="heart"></i></div><h2>${t('noHearts')}</h2>
     <p>${t('nextHeart')} <b id="nh-t" style="direction:ltr;display:inline-block"></b></p>
     <div class="actions">
+      ${adBtn('heart', t('adHeart'), 'm-adheart')}
       <button class="btn btn-pink" id="m-refill" ${S.gems >= REFILL_GEMS ? '' : 'disabled'} style="direction:ltr"><i data-i="gem"></i>${REFILL_GEMS} · ${t('refill')}</button>
       <button class="btn btn-gray" id="m-close">${t('close')}</button></div>`);
+  const ah = card.querySelector('#m-adheart');
+  if (ah) ah.onclick = () => watchAd('heart', ah, () => { S.hearts = Math.min(MAX_HEARTS, S.hearts + 1); St.save(); sfx.goal(); closeModal(); toast('+1 ♥'); });
   const upd = () => { const el = card.querySelector('#nh-t'); if (el) el.textContent = fmtDuration(St.msToNextHeart()); };
   upd(); const iv = setInterval(upd, 1000);
   modalOnClose = () => clearInterval(iv);
@@ -300,18 +329,25 @@ function onEnd(res) {
       </div>
       ${newBld.length ? `<p>🔓 ${newBld.map((k) => t('bld_' + k)).join('، ')}</p>` : ''}
       ${unlockedPlots ? `<p>🔓 ${t('emptyPlot')} +${unlockedPlots}</p>` : ''}
+      ${adBtn('double', t('adDouble') + ' +' + fmt(total), 'm-addouble')}
       <div class="actions h">
         <button class="btn btn-yellow" id="m-city"><i data-i="city"></i>${t('city')}</button>
         <button class="btn btn-green" id="m-next">${t('next')}</button>
       </div>`, false);
     card.querySelector('#m-next').onclick = () => { closeModal(true); startLevel(); };
     card.querySelector('#m-city').onclick = () => { sfx.click(); closeModal(true); backToMenu('city'); };
+    const ad2 = card.querySelector('#m-addouble');
+    if (ad2) ad2.onclick = () => watchAd('double', ad2, () => {
+      St.addCoins(total); sfx.coin(); ad2.outerHTML = `<div class="ad-done">✓ +${fmt(total)} 🪙</div>`;
+      const tl = card.querySelector('.reward-lines .total b'); if (tl) { tl.innerHTML = fmt(total * 2) + '<i data-i="coin"></i>'; icons(card); }
+    });
   } else if (res.canExtend) {
     sfx.lose();
     game.paused = true;
     const card = modal(`<div class="big-ico"><i data-i="clock"></i></div><h2>${t('lose')}</h2>
       <div class="goals" style="justify-content:center;margin:8px auto;display:inline-flex">${$('#goals').innerHTML}</div>
       <div class="actions">
+        ${adBtn('time', t('plus20'), 'm-adtime')}
         <button class="btn btn-pink" id="m-extra" ${S.gems >= EXTRA_TIME_GEMS ? '' : 'disabled'}><span style="direction:ltr;display:inline-flex;align-items:center;gap:4px"><i data-i="gem"></i>${EXTRA_TIME_GEMS}</span> ${t('plus20')}</button>
         <button class="btn btn-gray" id="m-give">${t('quit')} <small>(-1 ♥)</small></button></div>`, false);
     card.querySelector('#m-extra').onclick = () => {
@@ -319,6 +355,8 @@ function onEnd(res) {
       game.markExtended(); game.addTime(20); sfx.goal(); closeModal(true);
     };
     card.querySelector('#m-give').onclick = () => { closeModal(true); onEnd({ ...res, canExtend: false }); };
+    const at = card.querySelector('#m-adtime');
+    if (at) at.onclick = () => watchAd('time', at, () => { game.markExtended(); game.addTime(20); sfx.goal(); closeModal(true); });
   } else {
     sfx.lose();
     St.loseHeart();
@@ -348,8 +386,11 @@ function boosterTap(k) {
   const card = modal(`<div class="shop-item"><div class="ico" style="width:80px;height:80px"><i data-i="${k}" style="width:44px;height:44px"></i></div></div>
     <h2>${t(k)}</h2><p>${t(k + 'D')}</p>
     <div class="actions">
+      ${adBtn('booster', t('adFree'), 'm-adboost')}
       <button class="btn btn-yellow" id="m-buy" ${S.coins >= price ? '' : 'disabled'} style="direction:ltr"><i data-i="coin"></i>${fmt(price)}</button>
       <button class="btn btn-gray" id="m-close">${t('close')}</button></div>`, () => { game.paused = false; });
+  const ab = card.querySelector('#m-adboost');
+  if (ab) ab.onclick = () => watchAd('booster', ab, () => { S.boosters[k] = (S.boosters[k] || 0) + 1; St.save(); sfx.coin(); closeModal(); game._hudBoosters(); });
   card.querySelector('#m-close').onclick = () => closeModal();
   card.querySelector('#m-buy').onclick = () => {
     if (St.spendCoins(price)) { S.boosters[k] = (S.boosters[k] || 0) + 1; St.save(); sfx.coin(); closeModal(); game._hudBoosters(); }
@@ -363,6 +404,7 @@ function openSettings() {
     <div class="set-row"><span>${t('sound')}</span><button class="toggle ${S.settings.sound ? 'on' : ''}" id="s-sound"></button></div>
     <div class="set-row"><span>${t('vibration')}</span><button class="toggle ${S.settings.vib ? 'on' : ''}" id="s-vib"></button></div>
     <div class="set-row"><span>${t('language')}</span><div class="seg"><button data-l="ar" class="${getLang() === 'ar' ? 'on' : ''}">عربي</button><button data-l="en" class="${getLang() === 'en' ? 'on' : ''}">English</button></div></div>
+    ${showPrivacyOptionsButton() ? `<div class="set-row"><span>${t('privacy')}</span><button class="btn btn-gray" id="s-privacy" style="min-height:36px;font-size:14px">⚙</button></div>` : ''}
     <div class="actions">
       <button class="btn btn-gray" id="s-reset">${t('reset')}</button>
       <button class="btn btn-green" id="m-close">${t('close')}</button></div>
@@ -371,6 +413,7 @@ function openSettings() {
   card.querySelector('#s-vib').onclick = (e) => { S.settings.vib = !S.settings.vib; e.currentTarget.classList.toggle('on', S.settings.vib); St.save(); haptic('medium'); };
   card.querySelectorAll('[data-l]').forEach((b) => b.onclick = () => { S.settings.lang = b.dataset.l; St.save(); applyLang(); closeModal(true); openSettings(); });
   card.querySelector('#m-close').onclick = () => { sfx.click(); closeModal(); };
+  const sp = card.querySelector('#s-privacy'); if (sp) sp.onclick = () => openPrivacyOptions();
   card.querySelector('#s-reset').onclick = () => {
     const c2 = modal(`<h2>${t('reset')}</h2><p>${t('resetConfirm')}</p><div class="actions h">
       <button class="btn btn-gray" id="r-no">${t('no')}</button><button class="btn btn-pink" id="r-yes">${t('yes')}</button></div>`);
@@ -447,6 +490,7 @@ async function boot() {
 
   setTimeout(() => { $('#loading').classList.add('out'); const SS = plugin('SplashScreen'); if (SS) SS.hide().catch(() => {}); }, 300);
   if (S.tutorial) setTimeout(welcome, 500);
+  setTimeout(() => { initAds(); }, 1500);
 }
 
 // offline support when installed from Safari/Chrome (web version only)

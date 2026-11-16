@@ -31,7 +31,7 @@ const STR = {
     bld_hotel: 'فندق', bld_stadium: 'ملعب', bld_ferris: 'دولاب الهوا', bld_castle: 'قصر',
     emptyPlot: 'أرض فاضية', chooseBuilding: 'اختار شو بدك تبني', lvl: 'مستوى',
     welcome: 'ابلع كل شي، اجمع كوينز، وابنِ مدينتك!', gems: 'جواهر', bonus: 'مكافأة',
-    timeBonus: 'مكافأة الوقت', swallowedC: 'كوينز البلع', ready: 'جاهز؟', go: 'يلا!', reached: 'وصلت',
+    timeBonus: 'مكافأة الوقت', swallowedC: 'كوينز البلع', adHeart: 'قلب مجاني', adDouble: 'ضاعف الكوينز', adFree: 'خدها مجاناً', adNow: 'افتحها هلأ', adWatch: 'احضر', adBoostTitle: 'مساعدة مجانية', adBoostDesc: 'احضر إعلان قصير واربح مساعدة عشوائية', adFail: 'الإعلان مش جاهز، جرّب كمان شوي', adDemo: 'نسخة تجريبية', privacy: 'خيارات الخصوصية', ready: 'جاهز؟', go: 'يلا!', reached: 'وصلت',
   },
   en: {
     play: 'Play', city: 'City', tasks: 'Tasks', shop: 'Shop',
@@ -64,7 +64,7 @@ const STR = {
     bld_hotel: 'Hotel', bld_stadium: 'Stadium', bld_ferris: 'Ferris Wheel', bld_castle: 'Castle',
     emptyPlot: 'Empty plot', chooseBuilding: 'Choose what to build', lvl: 'Lv',
     welcome: 'Swallow everything, earn coins, build your city!', gems: 'Gems', bonus: 'Bonus',
-    timeBonus: 'Time bonus', swallowedC: 'Items', ready: 'Ready?', go: 'Go!', reached: 'Reached',
+    timeBonus: 'Time bonus', swallowedC: 'Items', adHeart: 'Free heart', adDouble: 'Double coins', adFree: 'Get it free', adNow: 'Open now', adWatch: 'Watch', adBoostTitle: 'Free booster', adBoostDesc: 'Watch a short ad to get a random booster', adFail: 'Ad not ready, try again soon', adDemo: 'demo', privacy: 'Privacy options', ready: 'Ready?', go: 'Go!', reached: 'Reached',
   },
 };
 
