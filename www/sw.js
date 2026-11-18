@@ -1,5 +1,5 @@
 // Offline cache for the web (home-screen) version. Not used inside the native apps.
-const CACHE = 'packitall-v16';
+const CACHE = 'packitall-v17';
 const FILES = ['./', './index.html', './css/style.css', './fonts/BalooBhaijaan2.ttf', './icon.png', './icon-180.png', './icon-192.png', './icon-512.png',
   './js/main.js', './js/orders.js', './js/game.js', './js/city.js', './js/cityart.js', './js/ads.js', './js/config.js', './js/event.js', './js/levels.js', './js/models.js', './js/state.js', './js/data.js', './js/i18n.js', './js/audio.js', './js/icons.js', './js/lib/three.module.min.js'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES))); self.skipWaiting(); });

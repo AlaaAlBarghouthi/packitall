@@ -1,10 +1,10 @@
 // Level generator: themes, goals, item placement
 export const THEMES = [
   {
-    id: 'beauty', floor: ['#ff9fcb', '#ffcfe5'], sky: '#ffc9e0', fog: '#ffd9ea',
-    small: [['lipstick', 0.8], ['nailpolish', 0.8], ['perfume', 0.75], ['mirror', 0.8], ['ring', 0.8], ['sunglasses', 0.8]],
-    medium: [['gift_purple', 1.0], ['bag', 1.0], ['headphones', 1.0], ['camera', 1.0], ['donut', 0.95], ['heels', 1.0], ['brush', 1.0]],
-    large: [['teddy', 2.0], ['gift_yellow', 2.3], ['gift_red', 3.0], ['bag', 2.8], ['heels', 2.4]], decal: 'beauty', movers: [],
+    id: 'gifts', floor: ['#c9b3ff', '#e6dcff'], sky: '#d9c9ff', fog: '#e6dcff',
+    small: [['dice', 0.8], ['yoyo', 0.8], ['candy', 0.8], ['sunglasses', 0.8], ['lollipop', 0.8]],
+    medium: [['gift_purple', 1.0], ['headphones', 1.0], ['camera', 1.0], ['basket', 1.0], ['toycar', 1.0]],
+    large: [['gift_yellow', 2.3], ['gift_red', 2.6], ['teddy', 2.2]], decal: 'gifts', movers: [],
   },
   {
     id: 'sweets', floor: ['#ffd58a', '#ffecc2'], sky: '#ffe2b0', fog: '#ffeccb',
@@ -230,7 +230,7 @@ export function populate(level, footOf) {
   // 2b) hazards: bombs from level 5
   level.hazards = 0;
   if (level.n >= HAZARD_LEVEL) {
-    const want = Math.max(2, Math.min(12, 3 + Math.floor((level.n - HAZARD_LEVEL) / 4) + (level.kind === 'hard' ? 2 : level.kind === 'boss' ? -1 : 0)));
+    const want = Math.max(2, Math.min(8, 2 + Math.floor((level.n - HAZARD_LEVEL) / 6) + (level.kind === 'hard' ? 2 : level.kind === 'boss' ? -1 : 0)));
     for (let i = 0, tries = 0; i < want && tries < 600; tries++) {
       const br = [0.7, 1.0, 1.4, 1.9][i % 4];
       const x = rx(3), z = rz(3);

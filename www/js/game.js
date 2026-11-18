@@ -48,7 +48,7 @@ function woodTexture() {
 
 // ---- floor art atlas (4 cells) per world
 const DECALS = {
-  beauty: [['heart', '#ff7fb5'], ['star', '#ffffff'], ['flower', '#ffb3d6'], ['bow', '#c58cff']],
+  gifts: [['heart', '#ff7fb5'], ['star', '#ffffff'], ['flower', '#ffb3d6'], ['bow', '#c58cff']],
   sweets: [['sprinkles', '#ff7fb5'], ['swirl', '#ffffff'], ['drip', '#c97b4a'], ['star', '#ff9fc8']],
   food:   [['blanket', '#ff6b5a'], ['star', '#fff2d6'], ['swirl', '#ffffff'], ['flower', '#ff7a5a']],
   toys:   [['puzzle', '#ffd23f'], ['star', '#ffffff'], ['target', '#ff6f6f'], ['puzzle', '#7fe0c0']],
@@ -63,7 +63,7 @@ const atlasCache = {};
 function decalAtlas(id) {
   if (atlasCache[id]) return atlasCache[id];
   const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
-  (DECALS[id] || DECALS.beauty).forEach(([shape, col], i) => {
+  (DECALS[id] || DECALS.gifts).forEach(([shape, col], i) => {
     g.save(); g.translate((i % 2) * 256 + 128, Math.floor(i / 2) * 256 + 128); g.fillStyle = col; g.strokeStyle = col; g.lineCap = 'round'; g.lineJoin = 'round';
     drawDecal(g, shape, col); g.restore();
   });
